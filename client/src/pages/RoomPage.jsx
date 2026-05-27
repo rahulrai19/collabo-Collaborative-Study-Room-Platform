@@ -121,6 +121,10 @@ export default function RoomPage() {
             // Auto-switch modes when reaching 0
             if (timerMode === 'focus') {
               toast('Focus session complete! Time for a break.', { icon: '🎯' });
+              // Log the session to the backend to update Activity Dashboard
+              api.post('/sessions/log', { roomId: id, duration: TIMER_MODES.focus.minutes * 60 })
+                .catch(err => console.error('Failed to log session:', err));
+              
               switchMode('shortBreak');
             } else {
               toast('Break is over! Ready to focus?', { icon: '☕' });

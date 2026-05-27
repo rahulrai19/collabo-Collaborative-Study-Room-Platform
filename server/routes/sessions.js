@@ -99,4 +99,28 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
+// POST /api/sessions/log - log individual focus session
+router.post('/log', auth, async (req, res) => {
+  try {
+    const { roomId, duration } = req.body;
+    if (!duration) return res.status(400).json({ message: 'Duration is required' });
+
+    await User.findByIdAndUpdate(req.user.id, { $inc: { totalStudyTime: duration } });
+
+    const session = new Session({
+      room: roomId,
+      startedBy: req.user.id,
+      participants: [req.user.id],
+      startTime: new Date(Date.now() - duration * 1000),
+      endTime: new Date(),
+      duration: duration,
+    });
+    await session.save();
+
+    res.json({ message: 'Session logged successfully', session });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;
