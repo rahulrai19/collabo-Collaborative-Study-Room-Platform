@@ -141,6 +141,26 @@ router.post('/:id/leave', auth, async (req, res) => {
   }
 });
 
+// POST /api/rooms/join/code - join using an invite code
+router.post('/join/code', auth, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: 'Invite code is required' });
+
+    const room = await Room.findOne({ inviteCode: code.toUpperCase() });
+    if (!room) return res.status(404).json({ message: 'Invalid invite code' });
+
+    if (!room.members.includes(req.user.id)) {
+      room.members.push(req.user.id);
+      await room.save();
+    }
+    
+    res.json({ message: 'Joined room successfully', roomId: room._id });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 // POST /api/rooms/:id/invite - invite user by username
 router.post('/:id/invite', auth, async (req, res) => {
   try {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Users, Lock, Globe, BookOpen, Sparkles, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Search, Users, Lock, Globe, BookOpen, Sparkles, ArrowRight, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -14,9 +14,13 @@ export default function RoomsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [filterMode, setFilterMode] = useState(null);
   const [form, setForm] = useState({ name: '', description: '', topic: 'General', isPrivate: false, mode: 'General' });
+  const [joinCode, setJoinCode] = useState('');
   const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const navigate = useNavigate();
 
   const fetchRooms = () => {
     api.get('/rooms').then(r => setRooms(r.data)).finally(() => setLoading(false));
@@ -38,6 +42,23 @@ export default function RoomsPage() {
       toast.error(err.response?.data?.message || 'Failed to create room');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleJoin = async (e) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return toast.error('Invite code required');
+    setJoining(true);
+    try {
+      const res = await api.post('/rooms/join/code', { code: joinCode.trim() });
+      toast.success('Joined room!');
+      setShowJoinModal(false);
+      setJoinCode('');
+      navigate(`/rooms/${res.data.roomId}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Invalid invite code');
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -80,9 +101,14 @@ export default function RoomsPage() {
               </button>
             </div>
             
-            <button onClick={() => setShowModal(true)} className="btn-primary flex items-center justify-center gap-2 px-6 shadow-primary-500/30 whitespace-nowrap">
-              <Plus size={20} /> Create Room
-            </button>
+            <div className="flex gap-3">
+              <button onClick={() => setShowJoinModal(true)} className="btn-secondary flex items-center justify-center gap-2 px-4 shadow-sm whitespace-nowrap hidden sm:flex">
+                <Key size={18} /> Join via Code
+              </button>
+              <button onClick={() => setShowModal(true)} className="btn-primary flex items-center justify-center gap-2 px-6 shadow-primary-500/30 whitespace-nowrap">
+                <Plus size={20} /> Create Room
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -218,6 +244,36 @@ export default function RoomsPage() {
                 <button type="button" className="btn-secondary flex-1" onClick={() => setShowModal(false)}>Cancel</button>
                 <button type="submit" className="btn-primary flex-1 shadow-primary-500/30" disabled={creating}>
                   {creating ? 'Creating...' : 'Create Room'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Join via Code Modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 dark:bg-dark-900/80 backdrop-blur-sm" onClick={() => setShowJoinModal(false)} />
+          <div className="relative card w-full max-w-sm z-10 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2 text-center">Join with Code</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">Enter a 6-character invite code.</p>
+            <form onSubmit={handleJoin} className="space-y-4">
+              <div>
+                <input 
+                  className="input text-center text-2xl font-mono tracking-[0.2em] uppercase placeholder:tracking-normal placeholder:font-sans" 
+                  placeholder="e.g. A7X9BC" 
+                  value={joinCode}
+                  maxLength={6}
+                  onChange={e => setJoinCode(e.target.value.toUpperCase())} 
+                  required 
+                  autoFocus 
+                />
+              </div>
+              <div className="flex gap-4 pt-4 mt-2 border-t border-slate-200 dark:border-slate-700/50">
+                <button type="button" className="btn-secondary flex-1" onClick={() => setShowJoinModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary flex-1 shadow-primary-500/30" disabled={joining || joinCode.length < 4}>
+                  {joining ? 'Joining...' : 'Join Room'}
                 </button>
               </div>
             </form>

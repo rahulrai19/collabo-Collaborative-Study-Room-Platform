@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize } from 'lucide-react';
+import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -137,6 +137,19 @@ export default function RoomPage() {
     return () => clearInterval(timerRef.current);
   }, [timerActive, timerMode]);
 
+  // Broadcast timer state
+  useEffect(() => {
+    if (!socket) return;
+    const { m, s } = formatTime(timeLeft);
+    const status = timerActive ? 'focusing' : (timeLeft === TIMER_MODES[timerMode].minutes * 60 ? 'idle' : 'paused');
+    socket.emit('timer_update', {
+      roomId: id,
+      status,
+      mode: timerMode,
+      timeString: `${m}:${s}`
+    });
+  }, [timerActive, timerMode, timeLeft, socket, id]);
+
   const switchMode = (mode) => {
     setTimerMode(mode);
     setTimeLeft(TIMER_MODES[mode].minutes * 60);
@@ -178,6 +191,17 @@ export default function RoomPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
+    try {
+      await api.delete(`/rooms/${id}`);
+      toast.success('Room deleted permanently');
+      navigate('/rooms');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete room');
+    }
+  };
+
   const cycleBackground = () => {
     setBgIndex((prev) => (prev + 1) % BACKGROUNDS.length);
   };
@@ -189,7 +213,8 @@ export default function RoomPage() {
   );
 
   if (!room) return null;
-  const isOwner = room.owner?._id === user?.id || room.owner === user?.id;
+  const userId = user?.id || user?._id;
+  const isOwner = room.owner?._id === userId || room.owner === userId;
   const { m, s } = formatTime(timeLeft);
 
   return (
@@ -269,7 +294,7 @@ export default function RoomPage() {
               <span className="text-white/90">{s}</span>
             </div>
 
-            {/* Pagination dots indicator (just for UI aesthetic matching screenshot) */}
+            {/* Pagination dots indicator */}
             <div className="flex justify-center gap-3 mt-12 mb-2 items-center opacity-40">
               <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
               <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
@@ -322,12 +347,26 @@ export default function RoomPage() {
             </div>
             <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
               {onlineUsers.map((u) => (
-                <div key={u} className="flex items-center gap-3 bg-white/5 p-2 rounded-xl">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
-                    {u[0].toUpperCase()}
+                <div key={u.username} className="flex items-center gap-3 bg-white/5 p-2 rounded-xl">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-inner">
+                    {u.username[0].toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium text-white/90 truncate">{u}</span>
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+                  <div className="flex flex-col overflow-hidden min-w-0">
+                    <span className="text-sm font-medium text-white/90 truncate">
+                      {u.username} {u.username === user.username && <span className="text-[10px] text-white/40">(you)</span>}
+                    </span>
+                    <span className="text-[10px] text-white/50 truncate uppercase tracking-wider font-bold">
+                      {u.mode === 'focus' ? 'Focus' : 'Break'} <span className="text-white/30 px-0.5">•</span> {u.timeString || '25:00'}
+                    </span>
+                  </div>
+                  <div 
+                    className={`ml-auto w-2 h-2 rounded-full flex-shrink-0 ${
+                      u.status === 'focusing' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 
+                      u.status === 'paused' ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 
+                      'bg-slate-500 opacity-50'
+                    }`} 
+                    title={u.status} 
+                  />
                 </div>
               ))}
             </div>
@@ -356,9 +395,14 @@ export default function RoomPage() {
               {messages.length > 0 && <span className="w-2 h-2 rounded-full bg-green-400" />}
             </button>
             {isOwner && (
-              <button onClick={() => setShowInvite(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white/70 hover:text-white hover:bg-white/10 transition-colors">
-                <UserPlus size={16} />
-              </button>
+              <>
+                <button onClick={() => setShowInvite(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Invite Code">
+                  <UserPlus size={16} />
+                </button>
+                <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white/70 hover:text-red-400 hover:bg-red-500/20 transition-colors" title="Delete Room">
+                  <Trash2 size={16} />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -448,20 +492,31 @@ export default function RoomPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowInvite(false)} />
           <div className="relative bg-dark-800 border border-slate-700/50 w-full max-w-sm rounded-2xl p-6 z-10 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h2 className="text-lg font-bold text-white mb-4">Invite User to Room</h2>
-            <form onSubmit={handleInvite} className="space-y-4">
-              <div>
-                <input className="w-full bg-dark-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-primary-500 transition-colors" 
-                  placeholder="Enter exactly username" value={inviteUsername}
-                  onChange={e => setInviteUsername(e.target.value)} required />
+            <h2 className="text-lg font-bold text-white mb-2 text-center">Room Invite Code</h2>
+            <p className="text-sm text-slate-400 text-center mb-6">Share this code with friends so they can join.</p>
+            <div className="space-y-4">
+              <div className="relative">
+                <input 
+                  className="w-full bg-dark-900 border border-slate-700 rounded-xl px-4 py-4 text-white text-center text-3xl font-mono tracking-[0.2em] uppercase focus:outline-none" 
+                  value={room.inviteCode || 'N/A'}
+                  readOnly 
+                />
               </div>
-              <div className="flex gap-3">
-                <button type="button" className="flex-1 py-3 px-4 bg-dark-700 hover:bg-dark-600 text-white rounded-xl font-bold transition-colors" onClick={() => setShowInvite(false)}>Cancel</button>
-                <button type="submit" className="flex-1 py-3 px-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold transition-colors shadow-lg shadow-primary-600/20">
-                  Send Invite
+              <div className="flex gap-3 mt-4">
+                <button type="button" className="flex-1 py-3 px-4 bg-dark-700 hover:bg-dark-600 text-white rounded-xl font-bold transition-colors" onClick={() => setShowInvite(false)}>Close</button>
+                <button 
+                  type="button" 
+                  className="flex-1 py-3 px-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold transition-colors shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2"
+                  onClick={() => {
+                    navigator.clipboard.writeText(room.inviteCode);
+                    toast.success('Invite code copied!');
+                    setShowInvite(false);
+                  }}
+                >
+                  <Copy size={18} /> Copy Code
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

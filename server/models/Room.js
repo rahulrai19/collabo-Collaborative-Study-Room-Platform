@@ -15,10 +15,28 @@ const roomSchema = new mongoose.Schema({
   owner:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   members:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   invitedUsers:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  inviteCode:  { type: String, unique: true, sparse: true },
   isPrivate:   { type: Boolean, default: false },
   messages:    [messageSchema],
   isActive:    { type: Boolean, default: false }, // session running?
   sessionStart:{ type: Date, default: null },
 }, { timestamps: true });
+
+// Auto-generate a 6-character invite code
+roomSchema.pre('save', async function (next) {
+  if (!this.inviteCode) {
+    const crypto = require('crypto');
+    let isUnique = false;
+    while (!isUnique) {
+      const code = crypto.randomBytes(3).toString('hex').toUpperCase();
+      const existing = await mongoose.models.Room.findOne({ inviteCode: code });
+      if (!existing) {
+        this.inviteCode = code;
+        isUnique = true;
+      }
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model('Room', roomSchema);

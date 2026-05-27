@@ -1,8 +1,16 @@
 const Room = require('../models/Room');
 const jwt = require('jsonwebtoken');
 
-// Track online users per room: { roomId: Set(userId) }
+// Track online users per room: { roomId: { username: { status, mode, timeString } } }
 const roomPresence = {};
+
+const getPresenceArray = (roomId) => {
+  if (!roomPresence[roomId]) return [];
+  return Object.entries(roomPresence[roomId]).map(([username, data]) => ({
+    username,
+    ...data,
+  }));
+};
 
 const socketHandler = (io) => {
   // Authenticate socket connections
@@ -24,27 +32,27 @@ const socketHandler = (io) => {
     // Join a room
     socket.on('join_room', async (roomId) => {
       socket.join(roomId);
-      if (!roomPresence[roomId]) roomPresence[roomId] = new Set();
-      roomPresence[roomId].add(socket.user.username);
+      if (!roomPresence[roomId]) roomPresence[roomId] = {};
+      roomPresence[roomId][socket.user.username] = { status: 'idle', mode: 'focus', timeString: '25:00' };
 
       // Notify others
       socket.to(roomId).emit('user_joined', {
         username: socket.user.username,
-        onlineUsers: [...roomPresence[roomId]],
+        onlineUsers: getPresenceArray(roomId),
       });
 
       // Send current online list to the joining user
-      socket.emit('presence_update', { onlineUsers: [...roomPresence[roomId]] });
+      socket.emit('presence_update', { onlineUsers: getPresenceArray(roomId) });
     });
 
     // Leave a room
     socket.on('leave_room', (roomId) => {
       socket.leave(roomId);
-      if (roomPresence[roomId]) {
-        roomPresence[roomId].delete(socket.user.username);
+      if (roomPresence[roomId] && roomPresence[roomId][socket.user.username]) {
+        delete roomPresence[roomId][socket.user.username];
         io.to(roomId).emit('user_left', {
           username: socket.user.username,
-          onlineUsers: [...roomPresence[roomId]],
+          onlineUsers: getPresenceArray(roomId),
         });
       }
     });
@@ -86,15 +94,23 @@ const socketHandler = (io) => {
       io.to(roomId).emit('session_update', { isActive: false, duration });
     });
 
+    // Timer sync for live focus tracking
+    socket.on('timer_update', ({ roomId, status, mode, timeString }) => {
+      if (roomPresence[roomId] && roomPresence[roomId][socket.user.username]) {
+        roomPresence[roomId][socket.user.username] = { status, mode, timeString };
+        io.to(roomId).emit('presence_update', { onlineUsers: getPresenceArray(roomId) });
+      }
+    });
+
     // Handle disconnect
     socket.on('disconnect', () => {
       // Remove from all rooms they were in
       for (const roomId in roomPresence) {
-        if (roomPresence[roomId].has(socket.user.username)) {
-          roomPresence[roomId].delete(socket.user.username);
+        if (roomPresence[roomId][socket.user.username]) {
+          delete roomPresence[roomId][socket.user.username];
           io.to(roomId).emit('user_left', {
             username: socket.user.username,
-            onlineUsers: [...roomPresence[roomId]],
+            onlineUsers: getPresenceArray(roomId),
           });
         }
       }
