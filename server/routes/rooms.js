@@ -46,7 +46,7 @@ router.get('/:id', auth, async (req, res) => {
 // POST /api/rooms - create room
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, description, topic, isPrivate, mode } = req.body;
+    const { name, description, topic, isPrivate, mode, userLimit } = req.body;
     if (!name) return res.status(400).json({ message: 'Room name is required' });
 
     const room = new Room({
@@ -55,6 +55,7 @@ router.post('/', auth, async (req, res) => {
       topic,
       mode: mode || 'General',
       isPrivate: isPrivate || false,
+      userLimit: Number(userLimit) || 0,
       owner: req.user.id,
       members: [req.user.id],
     });
@@ -74,12 +75,13 @@ router.put('/:id', auth, async (req, res) => {
     if (room.owner.toString() !== req.user.id)
       return res.status(403).json({ message: 'Not authorized' });
 
-    const { name, description, topic, isPrivate, mode } = req.body;
+    const { name, description, topic, isPrivate, mode, userLimit } = req.body;
     if (name) room.name = name;
     if (description !== undefined) room.description = description;
     if (topic) room.topic = topic;
     if (mode) room.mode = mode;
     if (isPrivate !== undefined) room.isPrivate = isPrivate;
+    if (userLimit !== undefined) room.userLimit = Number(userLimit);
 
     await room.save();
     res.json(room);
@@ -116,6 +118,9 @@ router.post('/:id/join', auth, async (req, res) => {
     }
 
     if (!room.members.includes(req.user.id)) {
+      if (room.userLimit > 0 && room.members.length >= room.userLimit) {
+        return res.status(403).json({ message: 'Room is full' });
+      }
       room.members.push(req.user.id);
       await room.save();
     }
@@ -151,6 +156,9 @@ router.post('/join/code', auth, async (req, res) => {
     if (!room) return res.status(404).json({ message: 'Invalid invite code' });
 
     if (!room.members.includes(req.user.id)) {
+      if (room.userLimit > 0 && room.members.length >= room.userLimit) {
+        return res.status(403).json({ message: 'Room is full' });
+      }
       room.members.push(req.user.id);
       await room.save();
     }

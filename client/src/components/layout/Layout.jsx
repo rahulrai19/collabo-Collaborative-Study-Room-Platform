@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { BookOpen, LayoutDashboard, Users, Trophy, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
+import { Layers, LayoutDashboard, Users, Trophy, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import TimerWidget from './TimerWidget';
 
@@ -27,9 +27,9 @@ export default function Layout({ children }) {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-primary-500 to-primary-600 p-2 rounded-xl shadow-lg shadow-primary-500/30">
-              <BookOpen size={20} className="text-white" />
+              <Layers size={20} className="text-white" />
             </div>
-            <span className="font-extrabold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">StudyRoom</span>
+            <span className="font-extrabold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">Collabo</span>
           </div>
 
           {/* Desktop Nav */}

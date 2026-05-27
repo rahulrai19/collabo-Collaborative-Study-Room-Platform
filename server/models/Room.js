@@ -15,6 +15,7 @@ const roomSchema = new mongoose.Schema({
   owner:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   members:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   invitedUsers:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  userLimit:   { type: Number, default: 0 },
   inviteCode:  { type: String, unique: true, sparse: true },
   isPrivate:   { type: Boolean, default: false },
   messages:    [messageSchema],

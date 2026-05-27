@@ -1,4 +1,4 @@
-# StudyRoom — Collaborative Study Platform
+# Collabo — Collaborative Study Platform
 
 A real-time collaborative study room platform where users can create virtual study rooms, invite participants, track study sessions, and collaborate via live chat.
 

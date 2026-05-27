@@ -383,7 +383,9 @@ export default function RoomPage() {
               }`}
             >
               <Users size={16} /> Members
-              <span className="bg-primary-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">{room.members?.length}</span>
+              <span className="bg-primary-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                {room.members?.length} {room.userLimit > 0 ? `/ ${room.userLimit}` : ''}
+              </span>
             </button>
             <button 
               onClick={() => setActivePanel(activePanel === 'chat' ? null : 'chat')}

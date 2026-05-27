@@ -16,7 +16,7 @@ export default function RoomsPage() {
   const [showModal, setShowModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [filterMode, setFilterMode] = useState(null);
-  const [form, setForm] = useState({ name: '', description: '', topic: 'General', isPrivate: false, mode: 'General' });
+  const [form, setForm] = useState({ name: '', description: '', topic: 'General', isPrivate: false, mode: 'General', userLimit: 0 });
   const [joinCode, setJoinCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -36,7 +36,7 @@ export default function RoomsPage() {
       await api.post('/rooms', form);
       toast.success('Room created!');
       setShowModal(false);
-      setForm({ name: '', description: '', topic: 'General', isPrivate: false, mode: 'General' });
+      setForm({ name: '', description: '', topic: 'General', isPrivate: false, mode: 'General', userLimit: 0 });
       fetchRooms();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create room');
@@ -146,9 +146,13 @@ export default function RoomsPage() {
           {filtered.map(room => {
             const isOwner = room.owner?._id === user?.id || room.owner?._id === user?._id;
             const isMember = room.members?.some(m => m._id === user?.id || m._id === user?._id || m === user?.id);
+            const isFull = room.userLimit > 0 && (room.members?.length || 0) >= room.userLimit;
+            const canEnter = isOwner || isMember || !isFull;
+            
             return (
-              <Link key={room._id} to={`/rooms/${room._id}`}
-                className="card hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary-500/10 hover:border-primary-500/40 transition-all duration-300 group cursor-pointer block relative overflow-hidden flex flex-col h-full">
+              <Link key={room._id} to={canEnter ? `/rooms/${room._id}` : '#'}
+                onClick={(e) => { if (!canEnter) { e.preventDefault(); toast.error('This room is currently full'); } }}
+                className={`card hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 group cursor-pointer block relative overflow-hidden flex flex-col h-full ${!canEnter ? 'opacity-70 grayscale-[30%]' : 'hover:shadow-primary-500/10 hover:border-primary-500/40'}`}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-black/5 dark:from-white/5 to-transparent rounded-bl-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 
                 <div className="flex items-start justify-between mb-4">
@@ -159,6 +163,9 @@ export default function RoomsPage() {
                     <span className="badge bg-slate-100 dark:bg-dark-700/80 text-slate-700 dark:text-slate-300 border-slate-300/50 dark:border-slate-600/50">{room.topic}</span>
                     {room.mode && room.mode !== 'General' && (
                       <span className="badge bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20">{room.mode}</span>
+                    )}
+                    {isFull && !isMember && !isOwner && (
+                      <span className="badge bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20">Full</span>
                     )}
                   </div>
                   {room.isActive && (
@@ -176,9 +183,9 @@ export default function RoomsPage() {
                 </p>
                 
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/40 group-hover:border-slate-300 dark:group-hover:border-slate-700/80 transition-colors">
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-sm bg-slate-50 dark:bg-dark-900/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700/30">
-                    <Users size={14} className="text-primary-500 dark:text-primary-400" />
-                    <span>{room.members?.length || 0} members</span>
+                  <div className={`flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-sm px-3 py-1.5 rounded-lg border ${isFull ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400' : 'bg-slate-50 dark:bg-dark-900/50 border-slate-200 dark:border-slate-700/30'}`}>
+                    <Users size={14} className={isFull ? 'text-red-500 dark:text-red-400' : 'text-primary-500 dark:text-primary-400'} />
+                    <span>{room.members?.length || 0} {room.userLimit > 0 ? `/ ${room.userLimit}` : ''} members</span>
                   </div>
                   <div className="flex gap-2">
                     {isOwner ? (
@@ -231,6 +238,19 @@ export default function RoomsPage() {
                     <option value="24/7 Study Hall">24/7 Study Hall</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  User Limit <span className="font-normal text-xs text-slate-500 dark:text-slate-400 ml-1">(0 for unlimited)</span>
+                </label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="50" 
+                  className="input" 
+                  value={form.userLimit} 
+                  onChange={e => setForm({ ...form, userLimit: Math.max(0, parseInt(e.target.value) || 0) })} 
+                />
               </div>
               <label className="flex items-center gap-3 cursor-pointer p-3 bg-slate-50 dark:bg-dark-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
                 <input type="checkbox" className="w-4 h-4 rounded border-slate-400 dark:border-slate-600 accent-primary-500"
