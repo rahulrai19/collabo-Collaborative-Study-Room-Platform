@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy } from 'lucide-react';
+import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy, FileText, Upload, Pin, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -36,9 +36,12 @@ export default function RoomPage() {
 
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [files, setFiles] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Background and UI State
   const [bgIndex, setBgIndex] = useState(0);
@@ -73,6 +76,7 @@ export default function RoomPage() {
       const res = await api.get(`/rooms/${id}`);
       setRoom(res.data);
       setMessages(res.data.messages || []);
+      setFiles(res.data.sharedFiles || []);
     } catch (err) {
       toast.error('Room not found or access denied');
       navigate('/rooms');
@@ -101,6 +105,13 @@ export default function RoomPage() {
     socket.on('presence_update', ({ onlineUsers }) => {
       setOnlineUsers(onlineUsers);
     });
+    socket.on('receive_file', (file) => {
+      setFiles(prev => [...prev, file]);
+      toast.success(`${file.username} shared a file: ${file.fileName}`);
+    });
+    socket.on('file_pin_update', ({ fileId, isPinned }) => {
+      setFiles(prev => prev.map(f => f._id === fileId ? { ...f, isPinned } : f));
+    });
 
     return () => {
       socket.emit('leave_room', id);
@@ -108,6 +119,8 @@ export default function RoomPage() {
       socket.off('user_joined');
       socket.off('user_left');
       socket.off('presence_update');
+      socket.off('receive_file');
+      socket.off('file_pin_update');
     };
   }, [id, socket, user.username]);
 
@@ -180,6 +193,41 @@ export default function RoomPage() {
     if (!messageText.trim() || !socket) return;
     socket.emit('send_message', { roomId: id, text: messageText });
     setMessageText('');
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 10 * 1024 * 1024) {
+      return toast.error('File must be less than 10MB');
+    }
+
+    setUploadingFile(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post(`/rooms/${id}/files`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      socket.emit('file_uploaded', { roomId: id, file: res.data });
+      toast.success('File uploaded successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload file');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const togglePin = async (fileId) => {
+    try {
+      const res = await api.put(`/rooms/${id}/files/${fileId}/pin`);
+      socket.emit('file_pinned', { roomId: id, fileId, isPinned: res.data.isPinned });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to pin file');
+    }
   };
 
   const handleInvite = async (e) => {
@@ -400,6 +448,14 @@ export default function RoomPage() {
               <MessageSquare size={16} /> Chat
               {messages.length > 0 && <span className="w-2 h-2 rounded-full bg-green-400" />}
             </button>
+            <button 
+              onClick={() => setActivePanel(activePanel === 'files' ? null : 'files')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                activePanel === 'files' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <FileText size={16} /> Files
+            </button>
             {isOwner && (
               <>
                 <button onClick={() => setShowInvite(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Invite Code">
@@ -485,6 +541,58 @@ export default function RoomPage() {
                       {m._id === room.owner?._id && <span className="ml-auto bg-primary-600/20 text-primary-300 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary-500/30">Owner</span>}
                     </div>
                   ))}
+                </div>
+              </>
+            )}
+
+            {activePanel === 'files' && (
+              <>
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                  <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2"><FileText size={16}/> Shared Files</h3>
+                  <button onClick={() => setActivePanel(null)} className="text-white/50 hover:text-white"><X size={16}/></button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                  {files.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
+                      <FileText size={32} className="text-white mb-2" />
+                      <p className="text-white text-sm">No files shared yet.</p>
+                    </div>
+                  ) : (
+                    [...files].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)).map((f, i) => (
+                      <div key={f._id || i} className={`p-3 rounded-xl border flex flex-col gap-2 ${f.isPinned ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/5 border-white/10'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate" title={f.fileName}>{f.fileName}</p>
+                            <p className="text-[10px] text-white/50 uppercase tracking-wider mt-0.5">{f.username} • {new Date(f.uploadedAt).toLocaleDateString()}</p>
+                          </div>
+                          {f.isPinned && <Pin size={14} className="text-amber-400 fill-amber-400 shrink-0" />}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <a href={f.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold rounded-lg transition-colors">
+                            <Download size={14} /> Download
+                          </a>
+                          {isOwner && (
+                            <button onClick={() => togglePin(f._id)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors">
+                              <Pin size={14} /> {f.isPinned ? 'Unpin' : 'Pin'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="p-3 border-t border-white/10 bg-black/20">
+                  <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingFile}
+                    className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  >
+                    {uploadingFile ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Upload size={16} />}
+                    {uploadingFile ? 'Uploading...' : 'Upload File'}
+                  </button>
                 </div>
               </>
             )}

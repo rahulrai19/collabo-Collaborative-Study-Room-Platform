@@ -102,6 +102,16 @@ const socketHandler = (io) => {
       }
     });
 
+    // File shared
+    socket.on('file_uploaded', ({ roomId, file }) => {
+      io.to(roomId).emit('receive_file', file);
+    });
+
+    // File pinned
+    socket.on('file_pinned', ({ roomId, fileId, isPinned }) => {
+      io.to(roomId).emit('file_pin_update', { fileId, isPinned });
+    });
+
     // Handle disconnect
     socket.on('disconnect', () => {
       // Remove from all rooms they were in

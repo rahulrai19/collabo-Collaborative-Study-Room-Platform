@@ -4,6 +4,7 @@ import { Clock, Users, BookOpen, TrendingUp, ArrowRight, Sparkles } from 'lucide
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import StudyModes from '../components/rooms/StudyModes';
+import ActivityCalendar from '../components/dashboard/ActivityCalendar';
 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -18,6 +19,7 @@ const formatDate = (date) =>
 export default function DashboardPage() {
   const { user, updateUser } = useAuth();
   const [sessions, setSessions] = useState([]);
+  const [allSessions, setAllSessions] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -34,6 +36,7 @@ export default function DashboardPage() {
       api.get('/auth/me'),
     ]).then(([s, r, u]) => {
       setSessions(s.data.slice(0, 5));
+      setAllSessions(s.data);
       setRooms(r.data.slice(0, 3));
       updateUser(u.data);
     }).finally(() => setLoading(false));
@@ -120,6 +123,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Activity Calendar Heatmap */}
+      <ActivityCalendar sessions={allSessions} />
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Recent Sessions */}

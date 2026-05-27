@@ -7,6 +7,14 @@ const messageSchema = new mongoose.Schema({
   sentAt:   { type: Date, default: Date.now },
 });
 
+const sharedFileSchema = new mongoose.Schema({
+  fileName: String,
+  fileUrl:  String,
+  username: String,
+  isPinned: { type: Boolean, default: false },
+  uploadedAt: { type: Date, default: Date.now },
+});
+
 const roomSchema = new mongoose.Schema({
   name:        { type: String, required: true, trim: true },
   description: { type: String, default: '' },
@@ -19,6 +27,7 @@ const roomSchema = new mongoose.Schema({
   inviteCode:  { type: String, unique: true, sparse: true },
   isPrivate:   { type: Boolean, default: false },
   messages:    [messageSchema],
+  sharedFiles: [sharedFileSchema],
   isActive:    { type: Boolean, default: false }, // session running?
   sessionStart:{ type: Date, default: null },
 }, { timestamps: true });

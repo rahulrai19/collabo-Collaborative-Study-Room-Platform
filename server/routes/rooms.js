@@ -2,6 +2,16 @@ const router = require('express').Router();
 const Room = require('../models/Room');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 // GET /api/rooms - list all public rooms + rooms user is member of
 router.get('/', auth, async (req, res) => {
@@ -186,6 +196,64 @@ router.post('/:id/invite', auth, async (req, res) => {
       await room.save();
     }
     res.json({ message: `${username} has been invited` });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// POST /api/rooms/:id/files - Upload file to Cloudinary and save to room
+router.post('/:id/files', auth, upload.single('file'), async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+    
+    const isMember = room.members.some(m => m.toString() === req.user.id);
+    const isOwner = room.owner.toString() === req.user.id;
+    if (!isMember && !isOwner) return res.status(403).json({ message: 'Access denied' });
+
+    if (!req.file) return res.status(400).json({ message: 'No file provided' });
+
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+    const result = await cloudinary.uploader.upload(dataURI, {
+      resource_type: 'auto',
+      folder: 'collabo_study_files',
+    });
+
+    const newFile = {
+      fileName: req.file.originalname,
+      fileUrl: result.secure_url,
+      username: req.user.username,
+      isPinned: false
+    };
+
+    room.sharedFiles.push(newFile);
+    await room.save();
+    
+    // We get the actual file object created with an _id
+    const savedFile = room.sharedFiles[room.sharedFiles.length - 1];
+    res.json(savedFile);
+  } catch (err) {
+    res.status(500).json({ message: 'Upload failed', error: err.message });
+  }
+});
+
+// PUT /api/rooms/:id/files/:fileId/pin - Toggle pin status
+router.put('/:id/files/:fileId/pin', auth, async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+    if (room.owner.toString() !== req.user.id) 
+      return res.status(403).json({ message: 'Only owner can pin files' });
+
+    const file = room.sharedFiles.id(req.params.fileId);
+    if (!file) return res.status(404).json({ message: 'File not found' });
+
+    file.isPinned = !file.isPinned;
+    await room.save();
+
+    res.json(file);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
