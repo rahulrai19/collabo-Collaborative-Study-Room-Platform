@@ -12,7 +12,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL ? process.env.CLIENT_URL : true,
+    origin: true,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -23,7 +23,7 @@ connectDB();
 
 // Middleware
 app.use(cors({ 
-  origin: process.env.CLIENT_URL ? process.env.CLIENT_URL : true, 
+  origin: true, 
   credentials: true 
 }));
 app.use(express.json());
