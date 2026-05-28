@@ -92,10 +92,10 @@ export default function Layout({ children }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <img src="https://res.cloudinary.com/dpf8nu189/image/upload/v1779940546/collabo_assets/collabo_logo.png" alt="Collabo Logo" className="w-10 h-10 object-contain mix-blend-multiply dark:invert transition-all" />
             <span className="font-extrabold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">Collabo</span>
-          </div>
+          </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-2">
