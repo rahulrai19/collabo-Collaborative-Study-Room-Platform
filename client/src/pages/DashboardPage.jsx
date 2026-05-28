@@ -108,7 +108,7 @@ export default function DashboardPage() {
           
           <div className="pt-2 w-full px-8 md:hidden">
             <Link to="/rooms" className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-primary-500 to-indigo-500 hover:from-primary-600 hover:to-indigo-600 shadow-lg shadow-primary-500/30 transition-all active:scale-95">
-              <Sparkles size={18} />
+              <Clock size={18} />
               Start Focus
             </Link>
           </div>

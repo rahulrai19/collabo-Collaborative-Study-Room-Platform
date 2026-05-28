@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, UserX, Check, X, Send } from 'lucide-react';
+import { MessageCircle, UserX, Check, X, Send, ChevronLeft } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import Avatar from '../components/ui/Avatar';
@@ -116,10 +116,10 @@ const FriendsPage = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto h-[calc(100vh-140px)] flex gap-6 animate-in fade-in duration-500">
+    <div className="max-w-6xl mx-auto h-[calc(100vh-140px)] flex gap-6 animate-in fade-in duration-500 relative">
       
       {/* Sidebar */}
-      <div className="w-80 flex flex-col gap-4">
+      <div className={`w-full md:w-80 flex-col gap-4 ${activeFriend ? 'hidden md:flex' : 'flex'}`}>
         {/* Pending Requests */}
         {pending.length > 0 && (
           <div className="card !p-4">
@@ -162,12 +162,18 @@ const FriendsPage = () => {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 card flex flex-col !p-0 overflow-hidden">
+      <div className={`flex-1 card flex-col !p-0 overflow-hidden ${!activeFriend ? 'hidden md:flex' : 'flex'}`}>
         {activeFriend ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between bg-slate-50/50 dark:bg-dark-800/50">
               <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setActiveFriend(null)} 
+                  className="md:hidden p-2 -ml-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-dark-700 transition-colors"
+                >
+                  <ChevronLeft size={20} />
+                </button>
                 <Avatar src={activeFriend.avatar} alt={activeFriend.username} fallback={activeFriend.username} className="w-12 h-12" />
                 <div>
                   <h2 className="font-bold text-lg">{activeFriend.username}</h2>
