@@ -10,9 +10,13 @@ const app = express();
 const server = http.createServer(app);
 //features
 
+const allowedOrigins = process.env.CLIENT_URL 
+  ? process.env.CLIENT_URL.split(',') 
+  : ['http://localhost:5173'];
+
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -23,7 +27,7 @@ connectDB();
 
 // Middleware
 app.use(cors({ 
-  origin: true, 
+  origin: allowedOrigins, 
   credentials: true 
 }));
 app.use(express.json());
