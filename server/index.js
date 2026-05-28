@@ -12,8 +12,9 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: process.env.CLIENT_URL ? process.env.CLIENT_URL : true,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
@@ -21,7 +22,10 @@ const io = new Server(server, {
 connectDB();
 
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+app.use(cors({ 
+  origin: process.env.CLIENT_URL ? process.env.CLIENT_URL : true, 
+  credentials: true 
+}));
 app.use(express.json());
 
 // Routes
