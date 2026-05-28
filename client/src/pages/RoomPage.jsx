@@ -53,13 +53,14 @@ export default function RoomPage() {
   const [inviteUsername, setInviteUsername] = useState('');
 
   // Local Timer State
-  const [timerMode, setTimerMode] = useState('focus');
-  const [timeLeft, setTimeLeft] = useState(TIMER_MODES.focus.minutes * 60);
+  const [timerMode, setTimerMode] = useState('stopwatch');
+  const [timeLeft, setTimeLeft] = useState(TIMER_MODES.stopwatch.minutes * 60);
   const [timerActive, setTimerActive] = useState(false);
   const [isDeepFocus, setIsDeepFocus] = useState(false);
   const [tabSwitches, setTabSwitches] = useState(0);
   const [showFocusWarning, setShowFocusWarning] = useState(false);
   const [returnTimeLeft, setReturnTimeLeft] = useState(15);
+  const [showDeepFocusTip, setShowDeepFocusTip] = useState(true);
 
   const chatRef = useRef(null);
   const timerRef = useRef(null);
@@ -94,6 +95,14 @@ export default function RoomPage() {
   }, [id, navigate]);
 
   useEffect(() => { fetchRoom(); }, [fetchRoom]);
+
+  // Deep Focus Tooltip Timer
+  useEffect(() => {
+    if (showDeepFocusTip) {
+      const timer = setTimeout(() => setShowDeepFocusTip(false), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [showDeepFocusTip]);
 
   // Join socket room
   useEffect(() => {
@@ -415,14 +424,14 @@ export default function RoomPage() {
         <div className="flex-1 flex flex-col items-center justify-center pointer-events-auto mt-[-4rem]">
           
           {/* Top Toggle */}
-          <div className="flex items-center gap-2 p-1.5 bg-black/40 backdrop-blur-xl rounded-full mb-8 border border-white/10 shadow-2xl">
+          <div className="flex items-center gap-1 md:gap-2 p-1.5 bg-black/40 backdrop-blur-xl rounded-full mb-6 md:mb-8 border border-white/10 shadow-2xl max-w-[95vw] overflow-x-auto scrollbar-hide">
             {Object.entries(TIMER_MODES).map(([key, data]) => {
               const Icon = data.icon;
               return (
                 <button
                   key={key}
                   onClick={() => switchMode(key)}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all ${
+                  className={`flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold tracking-wide transition-all shrink-0 ${
                     timerMode === key 
                       ? 'bg-white/10 text-white shadow-inner' 
                       : 'text-white/50 hover:text-white/80 hover:bg-white/5'
@@ -431,7 +440,7 @@ export default function RoomPage() {
                   <Icon size={16} className={timerMode === key ? 'text-orange-400' : ''} /> 
                   <div className="flex flex-col items-start">
                     <span>{data.label}</span>
-                    <span className="text-[10px] opacity-70">
+                    <span className="text-[9px] md:text-[10px] opacity-70">
                       {data.type === 'countup' ? 'Count up' : `${data.minutes} min`}
                     </span>
                   </div>
@@ -441,35 +450,35 @@ export default function RoomPage() {
           </div>
 
           {/* Main Timer Card */}
-          <div className="bg-[#1A1A1A]/80 backdrop-blur-2xl border border-white/10 rounded-[40px] p-12 w-full max-w-2xl text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)]">
-            <div className="text-orange-500 font-bold uppercase tracking-[0.3em] mb-2 text-sm drop-shadow-md">
+          <div className="bg-[#1A1A1A]/80 backdrop-blur-2xl border border-white/10 rounded-[30px] md:rounded-[40px] p-8 md:p-12 w-[90%] md:w-full max-w-2xl text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)]">
+            <div className="text-orange-500 font-bold uppercase tracking-[0.3em] mb-2 text-xs md:text-sm drop-shadow-md">
               {TIMER_MODES[timerMode].label}
             </div>
             
-            <div className="text-[11rem] leading-[0.8] font-bold text-white tracking-tighter flex items-center justify-center gap-2 font-mono">
+            <div className="text-7xl sm:text-9xl md:text-[11rem] leading-[0.8] font-bold text-white tracking-tighter flex items-center justify-center gap-1 md:gap-2 font-mono">
               <span>{m}</span>
-              <span className="text-orange-600/80 pb-6">:</span>
+              <span className="text-orange-600/80 pb-4 md:pb-6">:</span>
               <span className="text-white/90">{s}</span>
             </div>
 
             {/* Pagination dots indicator */}
-            <div className="flex justify-center gap-3 mt-12 mb-2 items-center opacity-40">
+            <div className="flex justify-center gap-2 md:gap-3 mt-8 md:mt-12 mb-2 items-center opacity-40">
               <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
               <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
               <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
               <div className="w-2 h-2 rounded-full border border-white"></div>
-              <span className="text-xs text-white font-mono ml-2">0/4</span>
+              <span className="text-[10px] md:text-xs text-white font-mono ml-2">0/4</span>
             </div>
           </div>
 
           {/* Controls Below Card */}
-          <div className="flex items-center gap-6 mt-8">
-            <button onClick={resetTimer} className="px-6 py-3 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white rounded-full backdrop-blur-xl border border-white/10 font-bold text-sm flex items-center gap-2 transition-all">
-              <RotateCcw size={16} /> Reset
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 mt-6 md:mt-8 w-full px-4">
+            <button onClick={resetTimer} className="px-5 md:px-6 py-3 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white rounded-full backdrop-blur-xl border border-white/10 font-bold text-xs md:text-sm flex items-center gap-2 transition-all">
+              <RotateCcw size={16} /> <span className="hidden sm:inline">Reset</span>
             </button>
             <button 
               onClick={toggleTimer} 
-              className={`px-10 py-3 rounded-full font-extrabold text-sm tracking-wider flex items-center gap-2 transition-all uppercase shadow-2xl ${
+              className={`px-8 md:px-10 py-3 rounded-full font-extrabold text-sm tracking-wider flex items-center gap-2 transition-all uppercase shadow-2xl ${
                 timerActive 
                   ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/20' 
                   : 'bg-white text-black hover:bg-gray-100 shadow-white/20'
@@ -477,22 +486,38 @@ export default function RoomPage() {
             >
               {timerActive ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Start</>}
             </button>
-            <button 
-              onClick={toggleDeepFocus}
-              className={`px-5 py-3 rounded-full font-bold text-sm flex items-center gap-2 transition-all border ${
-                isDeepFocus 
-                  ? 'bg-red-500/20 text-red-400 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
-                  : 'bg-black/40 text-white/50 border-white/10 hover:text-white/80'
-              }`}
-              title="Deep Focus Mode: Warns on tab switch, breaks after 3 times"
-            >
-              <Target size={16} /> Deep Focus
-            </button>
+            <div className="relative">
+              {showDeepFocusTip && !isDeepFocus && (
+                <div className="absolute bottom-[110%] left-1/2 -translate-x-1/2 w-48 bg-primary-600 text-white text-xs p-3 rounded-2xl shadow-xl shadow-primary-600/30 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500 z-50">
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary-600 rotate-45"></div>
+                  <div className="flex items-start justify-between gap-2 relative z-10">
+                    <p className="font-medium leading-relaxed">Try <strong className="font-bold">Deep Focus</strong> to avoid tab distractions!</p>
+                    <button onClick={() => setShowDeepFocusTip(false)} className="text-white/70 hover:text-white shrink-0 -mt-1 -mr-1 transition-colors">
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+              <button 
+                onClick={() => {
+                  toggleDeepFocus();
+                  setShowDeepFocusTip(false);
+                }}
+                className={`relative px-4 md:px-5 py-3 rounded-full font-bold text-xs md:text-sm flex items-center gap-2 transition-all border ${
+                  isDeepFocus 
+                    ? 'bg-red-500/20 text-red-400 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
+                    : `bg-black/40 text-white/50 border-white/10 hover:text-white/80 ${showDeepFocusTip ? 'ring-2 ring-primary-500/80 animate-pulse' : ''}`
+                }`}
+                title="Deep Focus Mode: Warns on tab switch, breaks after 3 times"
+              >
+                <Target size={16} /> <span className="hidden sm:inline">Deep Focus</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Left Side: Environment Toggles & Studying Now */}
-        <div className="absolute left-6 bottom-6 pointer-events-auto flex items-end gap-4">
+        <div className="absolute left-4 top-24 md:top-auto md:left-6 md:bottom-6 pointer-events-auto flex flex-col md:flex-row items-start md:items-end gap-4">
           
           {/* Small Toggles */}
           <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg">
@@ -552,8 +577,8 @@ export default function RoomPage() {
         </div>
 
         {/* Right Side: Bottom Toggles */}
-        <div className="absolute right-6 bottom-6 pointer-events-auto">
-          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg">
+        <div className="absolute inset-x-4 bottom-4 md:inset-auto md:right-6 md:bottom-6 pointer-events-auto flex justify-center md:justify-end">
+          <div className="flex items-center justify-center gap-1.5 md:gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg w-full md:w-auto overflow-x-auto scrollbar-hide">
             <button 
               onClick={() => setActivePanel(activePanel === 'members' ? null : 'members')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
@@ -729,8 +754,31 @@ export default function RoomPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowInvite(false)} />
           <div className="relative bg-dark-800 border border-slate-700/50 w-full max-w-sm rounded-2xl p-6 z-10 shadow-2xl animate-in zoom-in-95 duration-200">
+            
+            {/* Invite by Username */}
+            <h2 className="text-lg font-bold text-white mb-2">Invite User</h2>
+            <p className="text-sm text-slate-400 mb-4">Directly invite a friend by their username.</p>
+            <form onSubmit={handleInvite} className="flex gap-2 mb-2">
+              <input 
+                type="text"
+                placeholder="Enter username"
+                className="input flex-1 bg-dark-900 border-slate-700 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-primary-500/20"
+                value={inviteUsername}
+                onChange={e => setInviteUsername(e.target.value)}
+              />
+              <button type="submit" className="px-5 py-2 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl shadow-lg shadow-primary-600/20 transition-all disabled:opacity-50" disabled={!inviteUsername.trim()}>
+                Add
+              </button>
+            </form>
+
+            <div className="relative flex py-6 items-center">
+              <div className="flex-grow border-t border-slate-700"></div>
+              <span className="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold uppercase tracking-widest">OR SHARE CODE</span>
+              <div className="flex-grow border-t border-slate-700"></div>
+            </div>
+
+            {/* Invite Code */}
             <h2 className="text-lg font-bold text-white mb-2 text-center">Room Invite Code</h2>
-            <p className="text-sm text-slate-400 text-center mb-6">Share this code with friends so they can join.</p>
             <div className="space-y-4">
               <div className="relative">
                 <input 
@@ -747,7 +795,6 @@ export default function RoomPage() {
                   onClick={() => {
                     navigator.clipboard.writeText(room.inviteCode);
                     toast.success('Invite code copied!');
-                    setShowInvite(false);
                   }}
                 >
                   <Copy size={18} /> Copy Code
