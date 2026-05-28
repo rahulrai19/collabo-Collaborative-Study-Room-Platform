@@ -9,7 +9,10 @@ import DashboardPage from './pages/DashboardPage';
 import RoomsPage from './pages/RoomsPage';
 import RoomPage from './pages/RoomPage';
 import LeaderboardPage from './pages/LeaderboardPage';
-
+import FriendsPage from './pages/FriendsPage';
+import FindPeoplePage from './pages/FindPeoplePage';
+import FeedPage from './pages/FeedPage';
+import NotesPoolPage from './pages/NotesPoolPage';
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return (
@@ -35,6 +38,10 @@ const AppRoutes = () => (
     <Route path="/rooms" element={<PrivateRoute><Layout><RoomsPage /></Layout></PrivateRoute>} />
     <Route path="/rooms/:id" element={<PrivateRoute><Layout><RoomPage /></Layout></PrivateRoute>} />
     <Route path="/leaderboard" element={<PrivateRoute><Layout><LeaderboardPage /></Layout></PrivateRoute>} />
+    <Route path="/friends" element={<PrivateRoute><Layout><FriendsPage /></Layout></PrivateRoute>} />
+    <Route path="/find" element={<PrivateRoute><Layout><FindPeoplePage /></Layout></PrivateRoute>} />
+    <Route path="/feed" element={<PrivateRoute><Layout><FeedPage /></Layout></PrivateRoute>} />
+    <Route path="/pool/notes" element={<PrivateRoute><Layout><NotesPoolPage /></Layout></PrivateRoute>} />
     <Route path="*" element={<Navigate to="/dashboard" />} />
   </Routes>
 );

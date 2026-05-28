@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import StudyModes from '../components/rooms/StudyModes';
 import ActivityCalendar from '../components/dashboard/ActivityCalendar';
+import Milestones from '../components/dashboard/Milestones';
 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -23,8 +24,19 @@ export default function DashboardPage() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [gradient, setGradient] = useState("from-[#b85d4a] to-[#ed3a3a]");
 
   useEffect(() => {
+    const gradients = [
+      "from-[#b85d4a] to-[#ed3a3a]",
+      "from-emerald-400 to-cyan-500",
+      "from-fuchsia-500 to-pink-500",
+      "from-blue-500 to-indigo-500",
+      "from-amber-400 to-orange-500",
+      "from-purple-500 to-rose-500"
+    ];
+    setGradient(gradients[Math.floor(Math.random() * gradients.length)]);
+    
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -101,10 +113,9 @@ export default function DashboardPage() {
             <div className="absolute -top-10 -left-10 w-40 h-40 bg-primary-500/10 dark:bg-primary-500/20 blur-3xl rounded-full -z-10" />
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-400 dark:to-primary-600">
+              <span className={`text-transparent bg-clip-text bg-gradient-to-r ${gradient} transition-all duration-1000`}>
                 {user?.username}
               </span>
-              <Sparkles className="text-amber-400 animate-pulse" size={28} />
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Here's your study overview</p>
           </div>
@@ -126,6 +137,9 @@ export default function DashboardPage() {
 
       {/* Activity Calendar Heatmap */}
       <ActivityCalendar sessions={allSessions} />
+
+      {/* Milestone Badges */}
+      <Milestones totalSessions={totalSessions} />
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Recent Sessions */}

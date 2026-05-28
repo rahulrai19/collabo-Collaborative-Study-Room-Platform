@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Trophy, Clock, Medal } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import Avatar from '../components/ui/Avatar';
+import { getHighestBadge } from '../lib/badges';
 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -37,7 +39,10 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {leaders.map((u, i) => (
+          {leaders.map((u, i) => {
+            const highestBadge = getHighestBadge(u.totalSessions || 0);
+            
+            return (
             <div
               key={u._id}
               className={`card flex items-center gap-4 ${
@@ -52,14 +57,18 @@ export default function LeaderboardPage() {
               </div>
 
               {/* Avatar */}
-              <div className="w-9 h-9 rounded-full bg-primary-600 dark:bg-primary-700 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                {u.username?.[0]?.toUpperCase()}
-              </div>
+              <Avatar user={u} size="sm" className="w-9 h-9" />
 
               {/* Name */}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-slate-800 dark:text-white flex items-center gap-2">
-                  {u.username}
+                <p className="font-medium text-slate-800 dark:text-white flex flex-wrap items-center gap-2">
+                  <span>{u.username}</span>
+                  {highestBadge && (
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${highestBadge.bg} ${highestBadge.color} border ${highestBadge.border} text-[10px] uppercase font-black tracking-widest`} title={`${highestBadge.name} Badge`}>
+                      <highestBadge.icon size={10} />
+                      <span className="hidden sm:inline">{highestBadge.name}</span>
+                    </span>
+                  )}
                   {u.username === user?.username && (
                     <span className="badge bg-primary-500/10 dark:bg-primary-900/60 text-primary-600 dark:text-primary-300 text-xs">You</span>
                   )}
@@ -75,7 +84,7 @@ export default function LeaderboardPage() {
                 </span>
               </div>
             </div>
-          ))}
+          )})}
 
           {leaders.length === 0 && (
             <div className="text-center py-16 text-slate-500">

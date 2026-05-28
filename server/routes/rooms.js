@@ -23,8 +23,8 @@ router.get('/', auth, async (req, res) => {
         { owner: req.user.id },
       ],
     })
-      .populate('owner', 'username')
-      .populate('members', 'username')
+      .populate('owner', 'username avatar')
+      .populate('members', 'username avatar')
       .select('-messages')
       .sort({ createdAt: -1 });
     res.json(rooms);
@@ -37,8 +37,8 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const room = await Room.findById(req.params.id)
-      .populate('owner', 'username')
-      .populate('members', 'username');
+      .populate('owner', 'username avatar')
+      .populate('members', 'username avatar');
     if (!room) return res.status(404).json({ message: 'Room not found' });
 
     // Check access for private rooms
@@ -70,7 +70,7 @@ router.post('/', auth, async (req, res) => {
       members: [req.user.id],
     });
     await room.save();
-    await room.populate('owner', 'username');
+    await room.populate('owner', 'username avatar');
     res.status(201).json(room);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

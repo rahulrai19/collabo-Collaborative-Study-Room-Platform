@@ -49,6 +49,22 @@ const modes = [
       'Up to 200 members per room'
     ],
     buttonColor: 'bg-slate-100 dark:bg-dark-700 hover:bg-slate-200 dark:hover:bg-dark-600 text-teal-600 dark:text-teal-400 border-slate-200 dark:border-slate-600'
+  },
+  {
+    title: 'Deep Focus Room',
+    capacity: 'Up to 50',
+    capacityColor: 'text-rose-500 dark:text-rose-400 bg-rose-500/10 border-rose-500/20',
+    dotColor: 'bg-rose-500',
+    subtitle: 'Strict Anti-Distraction',
+    subtitleColor: 'text-rose-600 dark:text-rose-400',
+    description: 'Lock in with our strict distraction tracker. Enforced full-screen, tab switching penalties, and performance badges.',
+    bullets: [
+      'Enforced full-screen mode',
+      'Distraction tracking & penalties',
+      'Earn ranks from Newbie to Master',
+      'Maximum accountability'
+    ],
+    buttonColor: 'bg-slate-100 dark:bg-dark-700 hover:bg-slate-200 dark:hover:bg-dark-600 text-rose-600 dark:text-rose-400 border-slate-200 dark:border-slate-600'
   }
 ];
 
@@ -59,14 +75,14 @@ export default function StudyModes() {
     <div className="w-full py-10 mt-10 border-t border-slate-200 dark:border-slate-800">
       <div className="text-center mb-10">
         <h3 className="text-xs font-bold tracking-widest text-primary-600 dark:text-primary-400 uppercase mb-3">
-          Three Ways To Study
+          Four Ways To Study
         </h3>
         <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           Choose how you want to focus
         </h2>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {modes.map((mode, i) => (
           <div key={i} className="card flex flex-col h-full bg-slate-50 dark:bg-dark-800/40 border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600/80 transition-all duration-300 group">
             {/* Top Tag & Dot */}

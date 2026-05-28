@@ -42,9 +42,7 @@ export default function RegisterPage() {
 
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-600 rounded-2xl mb-4">
-            <Layers size={28} className="text-white" />
-          </div>
+          <img src="https://res.cloudinary.com/dpf8nu189/image/upload/v1779940546/collabo_assets/collabo_logo.png" alt="Collabo Logo" className="w-20 h-20 mx-auto object-contain mix-blend-multiply dark:invert mb-4" />
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create account</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">Start studying smarter with Collabo</p>
         </div>

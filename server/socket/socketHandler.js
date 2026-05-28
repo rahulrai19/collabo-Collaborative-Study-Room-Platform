@@ -4,6 +4,9 @@ const jwt = require('jsonwebtoken');
 // Track online users per room: { roomId: { username: { status, mode, timeString } } }
 const roomPresence = {};
 
+// Track user sockets globally: { userId: socketId }
+const userSockets = {};
+
 const getPresenceArray = (roomId) => {
   if (!roomPresence[roomId]) return [];
   return Object.entries(roomPresence[roomId]).map(([username, data]) => ({
@@ -28,12 +31,13 @@ const socketHandler = (io) => {
 
   io.on('connection', (socket) => {
     console.log(`User connected: ${socket.user.username}`);
+    userSockets[socket.user.id] = socket.id;
 
     // Join a room
     socket.on('join_room', async (roomId) => {
       socket.join(roomId);
       if (!roomPresence[roomId]) roomPresence[roomId] = {};
-      roomPresence[roomId][socket.user.username] = { status: 'idle', mode: 'focus', timeString: '25:00' };
+      roomPresence[roomId][socket.user.username] = { status: 'idle', mode: 'focus', timeString: '25:00', distractions: 0 };
 
       // Notify others
       socket.to(roomId).emit('user_joined', {
@@ -95,9 +99,9 @@ const socketHandler = (io) => {
     });
 
     // Timer sync for live focus tracking
-    socket.on('timer_update', ({ roomId, status, mode, timeString }) => {
+    socket.on('timer_update', ({ roomId, status, mode, timeString, distractions = 0 }) => {
       if (roomPresence[roomId] && roomPresence[roomId][socket.user.username]) {
-        roomPresence[roomId][socket.user.username] = { status, mode, timeString };
+        roomPresence[roomId][socket.user.username] = { status, mode, timeString, distractions };
         io.to(roomId).emit('presence_update', { onlineUsers: getPresenceArray(roomId) });
       }
     });
@@ -112,6 +116,39 @@ const socketHandler = (io) => {
       io.to(roomId).emit('file_pin_update', { fileId, isPinned });
     });
 
+    // Social Features
+    socket.on('private_message', async ({ recipientId, text }) => {
+      if (!text || !text.trim()) return;
+      
+      const Message = require('../models/Message');
+      try {
+        const msg = new Message({
+          sender: socket.user.id,
+          recipient: recipientId,
+          content: text.trim()
+        });
+        await msg.save();
+        
+        // Notify recipient if online
+        const recipientSocketId = userSockets[recipientId];
+        if (recipientSocketId) {
+          io.to(recipientSocketId).emit('receive_private_message', msg);
+        }
+        
+        // Send back to sender for confirmation
+        socket.emit('receive_private_message', msg);
+      } catch (err) {
+        console.error('Private message error:', err);
+      }
+    });
+
+    socket.on('friend_request', ({ recipientId }) => {
+      const recipientSocketId = userSockets[recipientId];
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit('friend_request_received');
+      }
+    });
+
     // Handle disconnect
     socket.on('disconnect', () => {
       // Remove from all rooms they were in
@@ -124,6 +161,7 @@ const socketHandler = (io) => {
           });
         }
       }
+      delete userSockets[socket.user.id];
       console.log(`User disconnected: ${socket.user.username}`);
     });
   });

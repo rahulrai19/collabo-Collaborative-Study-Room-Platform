@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy, FileText, Upload, Pin, Download } from 'lucide-react';
+import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy, FileText, Upload, Pin, Download, Timer, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { getSocket } from '../lib/socket';
+import Avatar from '../components/ui/Avatar';
 
 const BACKGROUNDS = [
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop", // Beach Sunset
@@ -15,9 +16,10 @@ const BACKGROUNDS = [
 ];
 
 const TIMER_MODES = {
-  focus: { label: 'Focus', minutes: 25, icon: Target },
-  shortBreak: { label: 'Short Break', minutes: 5, icon: Coffee },
-  longBreak: { label: 'Long Break', minutes: 15, icon: Moon },
+  focus: { label: 'Focus', minutes: 25, icon: Target, type: 'countdown' },
+  shortBreak: { label: 'Short Break', minutes: 5, icon: Coffee, type: 'countdown' },
+  longBreak: { label: 'Long Break', minutes: 15, icon: Moon, type: 'countdown' },
+  stopwatch: { label: 'Stopwatch', minutes: 0, icon: Timer, type: 'countup' },
 };
 
 const formatTime = (seconds) => {
@@ -54,9 +56,15 @@ export default function RoomPage() {
   const [timerMode, setTimerMode] = useState('focus');
   const [timeLeft, setTimeLeft] = useState(TIMER_MODES.focus.minutes * 60);
   const [timerActive, setTimerActive] = useState(false);
+  const [isDeepFocus, setIsDeepFocus] = useState(false);
+  const [tabSwitches, setTabSwitches] = useState(0);
+  const [showFocusWarning, setShowFocusWarning] = useState(false);
+  const [returnTimeLeft, setReturnTimeLeft] = useState(15);
 
   const chatRef = useRef(null);
   const timerRef = useRef(null);
+  const returnTimerRef = useRef(null);
+  const ignoreDistractionRef = useRef(false);
   const socket = getSocket();
 
   // Fullscreen toggle
@@ -129,6 +137,9 @@ export default function RoomPage() {
     if (timerActive) {
       timerRef.current = setInterval(() => {
         setTimeLeft(prev => {
+          if (TIMER_MODES[timerMode].type === 'countup') {
+            return prev + 1;
+          }
           if (prev <= 1) {
             setTimerActive(false);
             // Auto-switch modes when reaching 0
@@ -152,7 +163,80 @@ export default function RoomPage() {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [timerActive, timerMode]);
+  }, [timerActive, timerMode, id]);
+
+  // Deep Focus Mode Logic
+  useEffect(() => {
+    const handleDistraction = () => {
+      if (isDeepFocus && !ignoreDistractionRef.current) {
+        setTimerActive(false); // pause timer immediately
+        setTabSwitches((prev) => {
+          const newCount = prev + 1;
+          setShowFocusWarning(true);
+          return newCount;
+        });
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) handleDistraction();
+    };
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) handleDistraction();
+    };
+
+    const handleWindowFocus = () => {
+      if (ignoreDistractionRef.current) {
+        if (isDeepFocus && !document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => console.log(err));
+        }
+        setTimeout(() => {
+          ignoreDistractionRef.current = false;
+        }, 1000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [isDeepFocus]);
+
+  // Deep focus return countdown logic
+  useEffect(() => {
+    if (showFocusWarning && tabSwitches < 3) {
+      setReturnTimeLeft(15);
+      returnTimerRef.current = setInterval(() => {
+        setReturnTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(returnTimerRef.current);
+            setTabSwitches(3); // force break
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (returnTimerRef.current) clearInterval(returnTimerRef.current);
+    }
+    return () => {
+      if (returnTimerRef.current) clearInterval(returnTimerRef.current);
+    };
+  }, [showFocusWarning, tabSwitches]);
+
+  const toggleDeepFocus = () => {
+    const newState = !isDeepFocus;
+    setIsDeepFocus(newState);
+    if (newState && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => console.log(err));
+      setIsFullscreen(true);
+    }
+  };
 
   // Broadcast timer state
   useEffect(() => {
@@ -163,23 +247,38 @@ export default function RoomPage() {
       roomId: id,
       status,
       mode: timerMode,
-      timeString: `${m}:${s}`
+      timeString: `${m}:${s}`,
+      distractions: tabSwitches
     });
-  }, [timerActive, timerMode, timeLeft, socket, id]);
+  }, [timerActive, timerMode, timeLeft, socket, id, tabSwitches]);
 
   const switchMode = (mode) => {
+    if (timerMode === 'stopwatch' && timeLeft > 0) {
+      api.post('/sessions/log', { roomId: id, duration: timeLeft }).catch(console.error);
+      const { m, s } = formatTime(timeLeft);
+      toast.success(`Logged ${m}m ${s}s of study time!`);
+    }
     setTimerMode(mode);
     setTimeLeft(TIMER_MODES[mode].minutes * 60);
     setTimerActive(false);
   };
 
   const resetTimer = () => {
+    if (timerMode === 'stopwatch' && timeLeft > 0) {
+      api.post('/sessions/log', { roomId: id, duration: timeLeft }).catch(console.error);
+      const { m, s } = formatTime(timeLeft);
+      toast.success(`Logged ${m}m ${s}s of study time!`);
+    }
     setTimeLeft(TIMER_MODES[timerMode].minutes * 60);
     setTimerActive(false);
+    setTabSwitches(0);
   };
 
   const toggleTimer = () => {
     if (!timerActive && timeLeft === 0) resetTimer();
+    if (!timerActive) {
+      setTabSwitches(0);
+    }
     setTimerActive(!timerActive);
   };
 
@@ -193,6 +292,11 @@ export default function RoomPage() {
     if (!messageText.trim() || !socket) return;
     socket.emit('send_message', { roomId: id, text: messageText });
     setMessageText('');
+  };
+
+  const triggerFileInput = () => {
+    ignoreDistractionRef.current = true;
+    fileInputRef.current?.click();
   };
 
   const handleFileUpload = async (e) => {
@@ -327,7 +431,9 @@ export default function RoomPage() {
                   <Icon size={16} className={timerMode === key ? 'text-orange-400' : ''} /> 
                   <div className="flex flex-col items-start">
                     <span>{data.label}</span>
-                    <span className="text-[10px] opacity-70">{data.minutes} min</span>
+                    <span className="text-[10px] opacity-70">
+                      {data.type === 'countup' ? 'Count up' : `${data.minutes} min`}
+                    </span>
                   </div>
                 </button>
               );
@@ -371,6 +477,17 @@ export default function RoomPage() {
             >
               {timerActive ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Start</>}
             </button>
+            <button 
+              onClick={toggleDeepFocus}
+              className={`px-5 py-3 rounded-full font-bold text-sm flex items-center gap-2 transition-all border ${
+                isDeepFocus 
+                  ? 'bg-red-500/20 text-red-400 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
+                  : 'bg-black/40 text-white/50 border-white/10 hover:text-white/80'
+              }`}
+              title="Deep Focus Mode: Warns on tab switch, breaks after 3 times"
+            >
+              <Target size={16} /> Deep Focus
+            </button>
           </div>
         </div>
 
@@ -398,17 +515,25 @@ export default function RoomPage() {
               </span>
             </div>
             <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-              {onlineUsers.map((u) => (
+              {onlineUsers.map((u) => {
+                const userInRoom = room.members?.find(m => m.username === u.username);
+                return (
                 <div key={u.username} className="flex items-center gap-3 bg-white/5 p-2 rounded-xl">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-inner">
-                    {u.username[0].toUpperCase()}
-                  </div>
+                  <Avatar user={{ username: u.username, avatar: userInRoom?.avatar }} size="sm" />
                   <div className="flex flex-col overflow-hidden min-w-0">
                     <span className="text-sm font-medium text-white/90 truncate">
                       {u.username} {u.username === user.username && <span className="text-[10px] text-white/40">(you)</span>}
                     </span>
-                    <span className="text-[10px] text-white/50 truncate uppercase tracking-wider font-bold">
-                      {u.mode === 'focus' ? 'Focus' : 'Break'} <span className="text-white/30 px-0.5">•</span> {u.timeString || '25:00'}
+                    <span className="text-[10px] text-white/50 truncate uppercase tracking-wider font-bold flex items-center">
+                      {u.mode === 'focus' ? 'Focus' : 'Break'} <span className="text-white/30 px-1">•</span> {u.timeString || '25:00'}
+                      {u.distractions > 0 && (
+                        <span 
+                          className="inline-flex items-center gap-1 ml-2 px-1.5 py-0.5 bg-red-500/20 text-red-500 border border-red-500/50 rounded text-[11px] font-black tracking-normal shadow-[0_0_10px_rgba(239,68,68,0.3)]" 
+                          title={`${u.distractions} Distraction Strikes`}
+                        >
+                          <AlertTriangle size={12} className="fill-red-500/20" /> {u.distractions}
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div 
@@ -420,7 +545,8 @@ export default function RoomPage() {
                     title={u.status} 
                   />
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -489,11 +615,10 @@ export default function RoomPage() {
                   ) : (
                     messages.map((msg, i) => {
                       const isMe = msg.username === user.username;
+                      const msgUser = room.members?.find(m => m.username === msg.username) || { username: msg.username, avatar: null };
                       return (
                         <div key={i} className={`flex items-start gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                          <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-lg">
-                            {msg.username?.[0]?.toUpperCase()}
-                          </div>
+                          <Avatar user={msgUser} size="sm" />
                           <div className={`max-w-[75%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
                             <div className={`px-4 py-2 rounded-2xl text-sm ${
                               isMe ? 'bg-primary-600 text-white rounded-tr-sm' : 'bg-white/10 text-white rounded-tl-sm'
@@ -534,9 +659,7 @@ export default function RoomPage() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
                   {room.members?.map(m => (
                     <div key={m._id} className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div className="w-8 h-8 rounded-full bg-dark-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 shadow-inner">
-                        {m.username?.[0]?.toUpperCase()}
-                      </div>
+                      <Avatar user={m} size="sm" />
                       <span className="text-sm font-medium text-white/90 truncate">{m.username}</span>
                       {m._id === room.owner?._id && <span className="ml-auto bg-primary-600/20 text-primary-300 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary-500/30">Owner</span>}
                     </div>
@@ -586,7 +709,7 @@ export default function RoomPage() {
                 <div className="p-3 border-t border-white/10 bg-black/20">
                   <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
                   <button 
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={triggerFileInput}
                     disabled={uploadingFile}
                     className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                   >
@@ -634,6 +757,67 @@ export default function RoomPage() {
           </div>
         </div>
       )}
+      {/* Deep Focus Warning Modal */}
+      {showFocusWarning && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-red-900/90 backdrop-blur-md" />
+          <div className="relative bg-dark-900 border border-red-500/50 w-full max-w-md rounded-3xl p-8 z-10 shadow-[0_0_100px_rgba(239,68,68,0.5)] animate-in zoom-in-95 duration-300 text-center flex flex-col items-center">
+            
+            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6 border border-red-500/50">
+              <Target size={40} className="text-red-500" />
+            </div>
+
+            {tabSwitches >= 3 ? (
+              <>
+                <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-wider text-red-500">Focus Broken</h2>
+                <p className="text-slate-300 mb-8">You switched tabs too many times. Your Deep Focus session has been broken.</p>
+                <button 
+                  onClick={() => {
+                    setShowFocusWarning(false);
+                    resetTimer();
+                  }}
+                  className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors uppercase tracking-widest text-sm shadow-lg shadow-red-600/30"
+                >
+                  Acknowledge & Reset
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-black text-white mb-2">Distraction Detected!</h2>
+                <p className="text-slate-300 mb-6">
+                  You switched away from the Study Room. Stay focused!
+                </p>
+                
+                <div className="flex gap-2 mb-8">
+                  {[1, 2, 3].map((strike) => (
+                    <div key={strike} className={`w-12 h-3 rounded-full ${strike <= tabSwitches ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'bg-white/10'}`} />
+                  ))}
+                </div>
+
+                <div className="text-sm font-bold text-red-400 mb-8 tracking-widest uppercase flex flex-col items-center gap-1">
+                  <span>Strike {tabSwitches} of 3</span>
+                  <span className="text-3xl text-white font-mono mt-2">{returnTimeLeft}s</span>
+                  <span className="text-[10px] text-white/50 tracking-wider">to return before focus breaks</span>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    setShowFocusWarning(false);
+                    setTimerActive(true); // Resume timer
+                    if (!document.fullscreenElement) {
+                      document.documentElement.requestFullscreen().catch(err => console.log(err));
+                    }
+                  }}
+                  className="w-full py-4 bg-white hover:bg-slate-100 text-black rounded-xl font-black transition-colors uppercase tracking-widest text-sm shadow-xl"
+                >
+                  Resume Focus
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

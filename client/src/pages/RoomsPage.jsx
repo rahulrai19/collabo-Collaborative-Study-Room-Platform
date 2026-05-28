@@ -99,6 +99,11 @@ export default function RoomsPage() {
                 className={`text-sm font-bold px-4 py-2 rounded-xl transition-all shadow-sm border ${filterMode === '24/7 Study Hall' ? 'bg-teal-50 text-teal-600 border-teal-200 dark:bg-teal-500/20 dark:text-teal-400 dark:border-teal-500/50' : 'text-slate-600 bg-white hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 border-slate-200 dark:bg-dark-800/80 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-teal-500/10 dark:hover:text-teal-400 dark:hover:border-teal-500/30'}`}>
                 24/7 Study Hall
               </button>
+              <button 
+                onClick={() => setFilterMode(filterMode === 'Deep Focus Room' ? null : 'Deep Focus Room')}
+                className={`text-sm font-bold px-4 py-2 rounded-xl transition-all shadow-sm border ${filterMode === 'Deep Focus Room' ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/50' : 'text-slate-600 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border-slate-200 dark:bg-dark-800/80 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 dark:hover:border-rose-500/30'}`}>
+                Deep Focus Room
+              </button>
             </div>
             
             <div className="flex gap-3">
@@ -236,6 +241,7 @@ export default function RoomsPage() {
                     <option value="Study With Me">Study With Me</option>
                     <option value="Study Group">Study Group</option>
                     <option value="24/7 Study Hall">24/7 Study Hall</option>
+                    <option value="Deep Focus Room">Deep Focus Room</option>
                   </select>
                 </div>
               </div>
