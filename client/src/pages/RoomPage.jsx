@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy, FileText, Upload, Pin, Download, Timer, AlertTriangle } from 'lucide-react';
+import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy, FileText, Upload, Pin, Download, Timer, AlertTriangle, SkipForward, SkipBack, Volume2, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,13 @@ const BACKGROUNDS = [
   "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2070&auto=format&fit=crop", // Forest
   "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?q=80&w=2560&auto=format&fit=crop", // Cozy Room
   "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop", // Abstract Gradient
+];
+
+const MUSIC_TRACKS = [
+  { name: 'Ambient Deep', url: '/music/leberch-ambient-deep-375261.mp3' },
+  { name: 'Deep Concentration', url: '/music/leberch-deep-concentration-263073.mp3' },
+  { name: 'Orangery Rose', url: '/music/orangery-rose-141246.mp3' },
+  { name: 'Inspiring Focus', url: '/music/the_mountain-inspiring-focus-137045.mp3' }
 ];
 
 const TIMER_MODES = {
@@ -61,12 +68,58 @@ export default function RoomPage() {
   const [showFocusWarning, setShowFocusWarning] = useState(false);
   const [returnTimeLeft, setReturnTimeLeft] = useState(15);
   const [showDeepFocusTip, setShowDeepFocusTip] = useState(true);
+  const [showFiveMinTip, setShowFiveMinTip] = useState(false);
+
+  // Music State
+  const [showMusicPanel, setShowMusicPanel] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isPlayingMusic, setIsPlayingMusic] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const audioRef = useRef(null);
 
   const chatRef = useRef(null);
   const timerRef = useRef(null);
   const returnTimerRef = useRef(null);
   const ignoreDistractionRef = useRef(false);
   const socket = getSocket();
+
+  const sessionDataRef = useRef({ mode: timerMode, timeLeft: timeLeft, roomId: id });
+  
+  useEffect(() => {
+    sessionDataRef.current = { mode: timerMode, timeLeft: timeLeft, roomId: id };
+  }, [timerMode, timeLeft, id]);
+
+  useEffect(() => {
+    // Component unmount logic to auto-save sessions if they exit the room
+    return () => {
+      const { mode, timeLeft, roomId } = sessionDataRef.current;
+      let duration = 0;
+      if (mode === 'stopwatch' && timeLeft > 0) {
+        duration = timeLeft;
+      } else if (mode === 'focus' && timeLeft < TIMER_MODES.focus.minutes * 60) {
+        duration = (TIMER_MODES.focus.minutes * 60) - timeLeft;
+      }
+      
+      if (duration >= 300) { // Only log if they studied for >= 5 minutes
+        api.post('/sessions/log', { roomId, duration }).catch(() => {});
+      }
+    };
+  }, []);
+
+  const logPartialSession = (mode, time) => {
+    let duration = 0;
+    if (mode === 'stopwatch' && time > 0) {
+      duration = time;
+    } else if (mode === 'focus' && time < TIMER_MODES.focus.minutes * 60) {
+      duration = (TIMER_MODES.focus.minutes * 60) - time;
+    }
+    
+    if (duration >= 300) {
+      api.post('/sessions/log', { roomId: id, duration }).catch(console.error);
+      const { m, s } = formatTime(duration);
+      toast.success(`Automatically saved ${m}m ${s}s of study time!`);
+    }
+  };
 
   // Fullscreen toggle
   const toggleFullscreen = () => {
@@ -103,6 +156,42 @@ export default function RoomPage() {
       return () => clearTimeout(timer);
     }
   }, [showDeepFocusTip]);
+
+  useEffect(() => {
+    if (showFiveMinTip) {
+      const timer = setTimeout(() => setShowFiveMinTip(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showFiveMinTip]);
+
+  // Audio Player Effect
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlayingMusic) {
+        audioRef.current.play().catch(err => {
+          console.error("Audio play failed:", err);
+          setIsPlayingMusic(false);
+        });
+      } else {
+        audioRef.current.pause();
+      }
+      audioRef.current.volume = volume;
+    }
+  }, [isPlayingMusic, currentTrackIndex, volume]);
+
+  const toggleMusic = () => {
+    setIsPlayingMusic(!isPlayingMusic);
+  };
+  
+  const nextTrack = () => {
+    setCurrentTrackIndex((prev) => (prev + 1) % MUSIC_TRACKS.length);
+    setIsPlayingMusic(true);
+  };
+
+  const prevTrack = () => {
+    setCurrentTrackIndex((prev) => (prev - 1 + MUSIC_TRACKS.length) % MUSIC_TRACKS.length);
+    setIsPlayingMusic(true);
+  };
 
   // Join socket room
   useEffect(() => {
@@ -188,11 +277,15 @@ export default function RoomPage() {
     };
 
     const handleVisibilityChange = () => {
-      if (document.hidden) handleDistraction();
+      if (document.hidden || document.visibilityState === 'hidden') handleDistraction();
     };
 
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) handleDistraction();
+    };
+
+    const handleBlur = () => {
+      handleDistraction(); // Better support for mobile backgrounding
     };
 
     const handleWindowFocus = () => {
@@ -208,10 +301,12 @@ export default function RoomPage() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleWindowFocus);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleWindowFocus);
     };
   }, [isDeepFocus]);
@@ -262,22 +357,14 @@ export default function RoomPage() {
   }, [timerActive, timerMode, timeLeft, socket, id, tabSwitches]);
 
   const switchMode = (mode) => {
-    if (timerMode === 'stopwatch' && timeLeft > 0) {
-      api.post('/sessions/log', { roomId: id, duration: timeLeft }).catch(console.error);
-      const { m, s } = formatTime(timeLeft);
-      toast.success(`Logged ${m}m ${s}s of study time!`);
-    }
+    logPartialSession(timerMode, timeLeft);
     setTimerMode(mode);
     setTimeLeft(TIMER_MODES[mode].minutes * 60);
     setTimerActive(false);
   };
 
   const resetTimer = () => {
-    if (timerMode === 'stopwatch' && timeLeft > 0) {
-      api.post('/sessions/log', { roomId: id, duration: timeLeft }).catch(console.error);
-      const { m, s } = formatTime(timeLeft);
-      toast.success(`Logged ${m}m ${s}s of study time!`);
-    }
+    logPartialSession(timerMode, timeLeft);
     setTimeLeft(TIMER_MODES[timerMode].minutes * 60);
     setTimerActive(false);
     setTabSwitches(0);
@@ -287,6 +374,8 @@ export default function RoomPage() {
     if (!timerActive && timeLeft === 0) resetTimer();
     if (!timerActive) {
       setTabSwitches(0);
+      setShowFiveMinTip(true);
+      setShowDeepFocusTip(false); // Hide the other tooltip to prevent overlap
     }
     setTimerActive(!timerActive);
   };
@@ -387,6 +476,11 @@ export default function RoomPage() {
       className="fixed inset-0 z-50 overflow-hidden bg-dark-900 transition-all duration-1000 bg-cover bg-center font-sans"
       style={{ backgroundImage: `url(${BACKGROUNDS[bgIndex]})` }}
     >
+      <audio 
+        ref={audioRef} 
+        src={MUSIC_TRACKS[currentTrackIndex].url} 
+        onEnded={nextTrack}
+      />
       {/* Dim Overlay */}
       <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] transition-all duration-1000" />
       
@@ -476,16 +570,29 @@ export default function RoomPage() {
             <button onClick={resetTimer} className="px-5 md:px-6 py-3 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white rounded-full backdrop-blur-xl border border-white/10 font-bold text-xs md:text-sm flex items-center gap-2 transition-all">
               <RotateCcw size={16} /> <span className="hidden sm:inline">Reset</span>
             </button>
-            <button 
-              onClick={toggleTimer} 
-              className={`px-8 md:px-10 py-3 rounded-full font-extrabold text-sm tracking-wider flex items-center gap-2 transition-all uppercase shadow-2xl ${
-                timerActive 
-                  ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/20' 
-                  : 'bg-white text-black hover:bg-gray-100 shadow-white/20'
-              }`}
-            >
-              {timerActive ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Start</>}
-            </button>
+            <div className="relative">
+              {showFiveMinTip && (
+                <div className="absolute bottom-[110%] left-1/2 -translate-x-1/2 w-48 bg-primary-600 text-white text-xs p-3 rounded-2xl shadow-xl shadow-primary-600/30 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500 z-50">
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary-600 rotate-45"></div>
+                  <div className="flex items-start justify-between gap-2 relative z-10">
+                    <p className="font-medium leading-relaxed">Study sessions are saved after <strong className="font-bold">5 minutes</strong>!</p>
+                    <button onClick={() => setShowFiveMinTip(false)} className="text-white/70 hover:text-white shrink-0 -mt-1 -mr-1 transition-colors">
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+              <button 
+                onClick={toggleTimer} 
+                className={`relative px-8 md:px-10 py-3 rounded-full font-extrabold text-sm tracking-wider flex items-center gap-2 transition-all uppercase shadow-2xl ${
+                  timerActive 
+                    ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/20' 
+                    : 'bg-white text-black hover:bg-gray-100 shadow-white/20'
+                }`}
+              >
+                {timerActive ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Start</>}
+              </button>
+            </div>
             <div className="relative">
               {showDeepFocusTip && !isDeepFocus && (
                 <div className="absolute bottom-[110%] left-1/2 -translate-x-1/2 w-48 bg-primary-600 text-white text-xs p-3 rounded-2xl shadow-xl shadow-primary-600/30 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500 z-50">
@@ -520,14 +627,58 @@ export default function RoomPage() {
         <div className="absolute left-4 top-24 md:top-auto md:left-6 md:bottom-6 pointer-events-auto flex flex-col md:flex-row items-start md:items-end gap-4">
           
           {/* Small Toggles */}
-          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg">
-            <button onClick={cycleBackground} className="p-2.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors" title="Change Background">
-              <ImageIcon size={18} />
-            </button>
-            <div className="w-px h-6 bg-white/10" />
-            <button className="p-2.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors">
-              <Music size={18} />
-            </button>
+          <div className="relative">
+            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg">
+              <button onClick={cycleBackground} className="p-2.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors" title="Change Background">
+                <ImageIcon size={18} />
+              </button>
+              <div className="w-px h-6 bg-white/10" />
+              <button onClick={() => setShowMusicPanel(!showMusicPanel)} className={`p-2.5 rounded-xl transition-colors ${showMusicPanel || isPlayingMusic ? 'bg-primary-600/50 text-white' : 'hover:bg-white/10 text-white/70 hover:text-white'}`} title="Study Music">
+                <Music size={18} />
+              </button>
+            </div>
+            
+            {/* Music Panel */}
+            {showMusicPanel && (
+              <div className="absolute bottom-full left-0 mb-4 w-64 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-200">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                    <Music size={14} className="text-primary-400" /> Study Music
+                  </h3>
+                  <button onClick={() => setShowMusicPanel(false)} className="text-white/50 hover:text-white">
+                    <X size={14} />
+                  </button>
+                </div>
+                
+                <div className="text-center mb-4">
+                  <p className="text-white/90 text-sm font-medium truncate">{MUSIC_TRACKS[currentTrackIndex].name}</p>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mt-1">Lofi / Ambient</p>
+                </div>
+                
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <button onClick={prevTrack} className="p-2 text-white/70 hover:text-white transition-colors">
+                    <SkipBack size={18} />
+                  </button>
+                  <button onClick={toggleMusic} className="p-3 bg-primary-600 hover:bg-primary-500 text-white rounded-full shadow-lg transition-all">
+                    {isPlayingMusic ? <Pause size={20} /> : <Play size={20} />}
+                  </button>
+                  <button onClick={nextTrack} className="p-2 text-white/70 hover:text-white transition-colors">
+                    <SkipForward size={18} />
+                  </button>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Volume2 size={14} className="text-white/50" />
+                  <input 
+                    type="range" 
+                    min="0" max="1" step="0.05" 
+                    value={volume} 
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="w-full accent-primary-500 h-1 bg-white/10 rounded-full appearance-none outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Studying Now Panel */}
@@ -580,6 +731,17 @@ export default function RoomPage() {
         <div className="absolute inset-x-4 bottom-4 md:inset-auto md:right-6 md:bottom-6 pointer-events-auto flex justify-center md:justify-end">
           <div className="flex items-center justify-center gap-1.5 md:gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg w-full md:w-auto overflow-x-auto scrollbar-hide">
             <button 
+              onClick={() => setActivePanel(activePanel === 'live' ? null : 'live')}
+              className={`md:hidden flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                activePanel === 'live' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Activity size={16} /> Live
+              <span className="bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)]">
+                {onlineUsers.length}
+              </span>
+            </button>
+            <button 
               onClick={() => setActivePanel(activePanel === 'members' ? null : 'members')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
                 activePanel === 'members' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -624,6 +786,49 @@ export default function RoomPage() {
         {activePanel && (
           <div className="absolute right-6 bottom-24 w-80 h-[500px] max-h-[60vh] bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[24px] shadow-2xl flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-bottom-8 fade-in duration-300">
             
+            {activePanel === 'live' && (
+              <>
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                  <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2">
+                    <Activity size={16} className="text-green-400" /> Studying Now
+                  </h3>
+                  <button onClick={() => setActivePanel(null)} className="text-white/50 hover:text-white"><X size={16}/></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scrollbar">
+                  {onlineUsers.map((u) => {
+                    const userInRoom = room.members?.find(m => m.username === u.username);
+                    return (
+                      <div key={u.username} className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
+                        <Avatar user={{ username: u.username, avatar: userInRoom?.avatar }} size="sm" />
+                        <div className="flex flex-col overflow-hidden min-w-0">
+                          <span className="text-sm font-medium text-white/90 truncate">
+                            {u.username} {u.username === user.username && <span className="text-[10px] text-white/40">(you)</span>}
+                          </span>
+                          <span className="text-[10px] text-white/50 truncate uppercase tracking-wider font-bold flex items-center mt-1">
+                            {u.mode === 'focus' ? 'Focus' : 'Break'} <span className="text-white/30 px-1">•</span> {u.timeString || '25:00'}
+                            {u.distractions > 0 && (
+                              <span 
+                                className="inline-flex items-center gap-1 ml-2 px-1.5 py-0.5 bg-red-500/20 text-red-500 border border-red-500/50 rounded text-[11px] font-black tracking-normal shadow-[0_0_10px_rgba(239,68,68,0.3)]" 
+                              >
+                                <AlertTriangle size={12} className="fill-red-500/20" /> {u.distractions}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div 
+                          className={`ml-auto w-2 h-2 rounded-full flex-shrink-0 ${
+                            u.status === 'focusing' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 
+                            u.status === 'paused' ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 
+                            'bg-slate-500 opacity-50'
+                          }`} 
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
             {activePanel === 'chat' && (
               <>
                 <div className="p-4 border-b border-white/10 flex items-center justify-between">

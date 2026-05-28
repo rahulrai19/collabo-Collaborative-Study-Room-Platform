@@ -106,11 +106,11 @@ export default function RoomsPage() {
               </button>
             </div>
             
-            <div className="flex gap-3">
-              <button onClick={() => setShowJoinModal(true)} className="btn-secondary flex items-center justify-center gap-2 px-4 shadow-sm whitespace-nowrap hidden sm:flex">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+              <button onClick={() => setShowJoinModal(true)} className="btn-secondary flex items-center justify-center gap-2 px-4 shadow-sm whitespace-nowrap w-full sm:w-auto">
                 <Key size={18} /> Join via Code
               </button>
-              <button onClick={() => setShowModal(true)} className="btn-primary flex items-center justify-center gap-2 px-6 shadow-primary-500/30 whitespace-nowrap">
+              <button onClick={() => setShowModal(true)} className="btn-primary flex items-center justify-center gap-2 px-6 shadow-primary-500/30 whitespace-nowrap w-full sm:w-auto">
                 <Plus size={20} /> Create Room
               </button>
             </div>

@@ -54,9 +54,9 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const totalSessions = sessions.length;
-  const avgDuration = sessions.length
-    ? Math.round(sessions.reduce((a, s) => a + (s.duration || 0), 0) / sessions.length)
+  const totalSessions = allSessions.length;
+  const avgDuration = allSessions.length
+    ? Math.round(allSessions.reduce((a, s) => a + (s.duration || 0), 0) / allSessions.length)
     : 0;
 
   const stats = [
