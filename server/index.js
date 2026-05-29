@@ -41,6 +41,7 @@ app.use('/api/feed', require('./routes/feed'));
 app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/notes', require('./routes/notes'));
+app.use('/api/music', require('./routes/music'));
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'StudyRoom API running' }));

@@ -15,12 +15,7 @@ const BACKGROUNDS = [
   "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop", // Abstract Gradient
 ];
 
-const MUSIC_TRACKS = [
-  { name: 'Ambient Deep', url: '/music/leberch-ambient-deep-375261.mp3' },
-  { name: 'Deep Concentration', url: '/music/leberch-deep-concentration-263073.mp3' },
-  { name: 'Orangery Rose', url: '/music/orangery-rose-141246.mp3' },
-  { name: 'Inspiring Focus', url: '/music/the_mountain-inspiring-focus-137045.mp3' }
-];
+// MUSIC_TRACKS will be fetched from API
 
 const TIMER_MODES = {
   focus: { label: 'Focus', minutes: 25, icon: Target, type: 'countdown' },
@@ -71,6 +66,7 @@ export default function RoomPage() {
   const [showFiveMinTip, setShowFiveMinTip] = useState(false);
 
   // Music State
+  const [musicTracks, setMusicTracks] = useState([]);
   const [showMusicPanel, setShowMusicPanel] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
@@ -132,22 +128,28 @@ export default function RoomPage() {
     }
   };
 
-  // Fetch room
-  const fetchRoom = useCallback(async () => {
-    try {
-      const res = await api.get(`/rooms/${id}`);
-      setRoom(res.data);
-      setMessages(res.data.messages || []);
-      setFiles(res.data.sharedFiles || []);
-    } catch (err) {
-      toast.error('Room not found or access denied');
-      navigate('/rooms');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, navigate]);
+  // Load room data & music tracks
+  useEffect(() => {
+    if (!id || id === 'undefined' || id === 'null') return navigate('/rooms');
 
-  useEffect(() => { fetchRoom(); }, [fetchRoom]);
+    // Fetch Music
+    api.get('/music')
+      .then(res => setMusicTracks(res.data))
+      .catch(console.error);
+
+    // Fetch Room
+    api.get(`/rooms/${id}`)
+      .then(res => {
+        setRoom(res.data);
+        setMessages(res.data.messages || []);
+        setFiles(res.data.sharedFiles || []);
+      })
+      .catch(err => {
+        toast.error('Failed to load room');
+        navigate('/rooms');
+      })
+      .finally(() => setLoading(false));
+  }, [id, navigate]);
 
   // Deep Focus Tooltip Timer
   useEffect(() => {
@@ -180,16 +182,24 @@ export default function RoomPage() {
   }, [isPlayingMusic, currentTrackIndex, volume]);
 
   const toggleMusic = () => {
+    if (!audioRef.current || musicTracks.length === 0) return;
+    if (isPlayingMusic) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.error);
+    }
     setIsPlayingMusic(!isPlayingMusic);
   };
-  
+
   const nextTrack = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % MUSIC_TRACKS.length);
+    if (musicTracks.length === 0) return;
+    setCurrentTrackIndex((prev) => (prev + 1) % musicTracks.length);
     setIsPlayingMusic(true);
   };
 
   const prevTrack = () => {
-    setCurrentTrackIndex((prev) => (prev - 1 + MUSIC_TRACKS.length) % MUSIC_TRACKS.length);
+    if (musicTracks.length === 0) return;
+    setCurrentTrackIndex((prev) => (prev === 0 ? musicTracks.length - 1 : prev - 1));
     setIsPlayingMusic(true);
   };
 
@@ -478,7 +488,7 @@ export default function RoomPage() {
     >
       <audio 
         ref={audioRef} 
-        src={MUSIC_TRACKS[currentTrackIndex].url} 
+        src={musicTracks.length > 0 ? musicTracks[currentTrackIndex]?.url : ''} 
         onEnded={nextTrack}
       />
       {/* Dim Overlay */}
@@ -651,7 +661,7 @@ export default function RoomPage() {
                 </div>
                 
                 <div className="text-center mb-4">
-                  <p className="text-white/90 text-sm font-medium truncate">{MUSIC_TRACKS[currentTrackIndex].name}</p>
+                  <p className="text-white/90 text-sm font-medium truncate">{musicTracks[currentTrackIndex]?.name || 'Loading...'}</p>
                   <p className="text-white/40 text-[10px] uppercase tracking-wider mt-1">Lofi / Ambient</p>
                 </div>
                 

@@ -1,150 +1,164 @@
-# Collabo — Collaborative Study Platform
+<div align="center">
+  <br />
+    <img src="./client/public/favicon.png" alt="Collabo Logo" width="80" height="80">
+  <br />
+  <h1 align="center">Collabo</h1>
+  <p align="center">
+    <strong>A next-generation real-time collaborative study room platform.</strong>
+    <br />
+    Focus deeper, study smarter, and connect with peers around the world.
+  </p>
+</div>
 
-A real-time collaborative study room platform where users can create virtual study rooms, invite participants, track study sessions, and collaborate via live chat.
+<details open="open">
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#-about-the-project">About The Project</a></li>
+    <li><a href="#-key-features">Key Features</a></li>
+    <li><a href="#-tech-stack">Tech Stack</a></li>
+    <li><a href="#-getting-started">Getting Started</a></li>
+    <li><a href="#-api-endpoints">API Endpoints</a></li>
+  </ol>
+</details>
 
-## 🔗 Live Demo
+## 🚀 About The Project
 
-- **Frontend:** [https://studyroom-app.vercel.app](https://studyroom-app.vercel.app) ← update after deploy
-- **Backend API:** [https://studyroom-api.onrender.com](https://studyroom-api.onrender.com) ← update after deploy
+Collabo is a highly interactive, beautifully designed virtual study platform built to keep you productive. Whether you need a private room to cram with friends, or a 24/7 public study hall to stay accountable, Collabo provides the ultimate environment to track your time, listen to ambient focus music, and eliminate distractions.
 
-## ✨ Features Implemented
+<!-- Add Screenshot Here (Dashboard Overview) -->
+> *[Screenshot Placeholder: Dashboard showing overall study stats and activity calendar]*
 
-- **Authentication** — Register, login with JWT (7-day tokens)
-- **Study Rooms** — Create public/private rooms, join, leave, delete
-- **Invite System** — Room owners can invite users by username to private rooms
-- **Session Timer** — Start/stop study sessions with real-time elapsed timer
-- **Real-time Chat** — Live room chat using Socket.io (messages persisted to DB)
-- **Online Presence** — See who's currently in the room in real-time
-- **Activity Dashboard** — Personal stats: total study time, recent sessions, rooms
-- **Leaderboard** — Top 10 users ranked by total study time
-- **Session History** — Per-room and per-user session history with durations
+## ✨ Key Features
+
+### 🎧 Built-in Ambient Music Player
+Study in the zone without leaving the app. The integrated music player streams Lofi and Ambient tracks directly from a cloud CDN (Cloudinary) to ensure zero lag.
+<!-- Add Screenshot Here (Music Player Panel in Room) -->
+> *[Screenshot Placeholder: Slide-up music player showing volume controls and current track]*
+
+### 🎯 Deep Focus Mode & Distraction Tracking
+Eliminate procrastination with the **Deep Focus Mode**. When enabled, the app enters fullscreen and tracks your tab-switches and window minimizes.
+- Auto-punishes distractions with a 3-strike system.
+- Alerts you when you leave the study tab.
+<!-- Add Screenshot Here (Deep Focus Distraction Warning) -->
+> *[Screenshot Placeholder: Fullscreen Deep Focus mode and distraction alert popup]*
+
+### 👥 Real-Time Collaboration
+See exactly who is studying with you, right now. 
+- **Live Members Panel:** Slide-out panel to view who is currently focusing or taking a break.
+- **Global Chat:** Real-time socket-based messaging within your room.
+<!-- Add Screenshot Here (Live Panel & Chat) -->
+> *[Screenshot Placeholder: Slide-out Live panel showing active members and their current timer status]*
+
+### 📁 File Sharing & Shared Notes
+Upload and pin study materials directly to the room for everyone to access.
+- Upload PDF, Images, or Documents.
+- Everyone in the room can instantly download shared resources.
+<!-- Add Screenshot Here (File Sharing Panel) -->
+> *[Screenshot Placeholder: Shared Files panel showing uploaded documents]*
+
+### 🔒 Private & Public Study Rooms
+Create dedicated environments for any type of study session:
+- **Public Study Halls:** Meet new people and study together.
+- **Private Rooms:** Lock rooms with a passcode or invite-only links.
+- **Invite System:** Easily invite friends by their username or share a 6-digit room code.
+<!-- Add Screenshot Here (Room Creation Modal) -->
+> *[Screenshot Placeholder: Create Room modal showing privacy options and study modes]*
+
+### 📊 Comprehensive Activity Tracking
+Your study time is precious, so we automatically log it for you.
+- **Auto-Save:** Sessions are securely auto-saved to the database even if you accidentally close the tab (with a smart 5-minute minimum threshold).
+- **Global Leaderboard:** Compete with other students and rank up by accumulating study hours.
+- **Activity Calendar:** GitHub-style contribution graph showing your daily study habits.
+<!-- Add Screenshot Here (Leaderboard & Stats) -->
+> *[Screenshot Placeholder: Leaderboard page and GitHub-style contribution graph]*
+
+### 📱 Responsive Mobile Layout
+Study on the go! The entire platform is fully optimized for mobile devices.
+- Custom slide-out menus designed for phone screens.
+- Mobile-optimized deep focus tracking.
+<!-- Add Screenshot Here (Mobile View) -->
+> *[Screenshot Placeholder: Two phones side-by-side showing the dashboard and a live study room]*
+
+### 🎨 Customizable Themes & Backgrounds
+Personalize your study environment to fit your mood.
+- Switch between multiple beautiful HD backgrounds (Beach, Forest, Gradient, etc.)
+- Fully supported Dark Mode and Light Mode for the entire application.
+<!-- Add Screenshot Here (Theme Showcase) -->
+> *[Screenshot Placeholder: Split screen showing Dark Mode vs Light Mode dashboard]*
 
 ## 🛠 Tech Stack
 
+Collabo is built with modern web technologies to ensure a snappy, real-time experience.
+
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 (Vite), Tailwind CSS, React Router v6 |
-| Backend | Node.js, Express.js |
-| Database | MongoDB with Mongoose ODM |
-| Real-time | Socket.io (WebSockets) |
-| Auth | JWT (jsonwebtoken + bcryptjs) |
-| Deployment | Vercel (frontend) + Render (backend) + MongoDB Atlas |
+| **Frontend** | React 18, Vite, Tailwind CSS, Lucide Icons |
+| **Backend** | Node.js, Express.js |
+| **Database** | MongoDB & Mongoose |
+| **Real-Time** | Socket.io (WebSockets) |
+| **File Storage** | Cloudinary (CDN for Audio & Images) |
 
-## 📁 Project Structure
-
-```
-studyroom/
-├── client/                  # React frontend (Vite)
-│   ├── src/
-│   │   ├── pages/           # LoginPage, RegisterPage, DashboardPage, RoomsPage, RoomPage, LeaderboardPage
-│   │   ├── components/      # Layout, UI components
-│   │   ├── context/         # AuthContext (global user state)
-│   │   └── lib/             # api.js (axios), socket.js (socket.io client)
-│   └── .env.example
-└── server/                  # Express backend
-    ├── models/              # User, Room, Session (Mongoose schemas)
-    ├── routes/              # auth, rooms, sessions, users
-    ├── middleware/          # JWT auth middleware
-    ├── socket/              # Socket.io event handlers
-    └── .env.example
-```
-
-## 🚀 Setup Instructions
+## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js v18+
-- MongoDB Atlas account (free tier works)
+- MongoDB Atlas Account
+- Cloudinary Account (for hosting music and avatars)
 
-### 1. Clone the repo
+### 1. Clone & Install
 ```bash
 git clone https://github.com/YOUR_USERNAME/studyroom.git
 cd studyroom
+
+# Install Backend
+cd server && npm install
+
+# Install Frontend
+cd ../client && npm install
 ```
 
-### 2. Backend setup
-```bash
-cd server
-npm install
-cp .env.example .env
-# Fill in your .env values (see below)
-npm run dev
-```
+### 2. Environment Variables
 
-**Server `.env`:**
-```
+Create a `.env` file in the `server` directory:
+```env
 PORT=5000
-MONGO_URI=mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/studyroom
-JWT_SECRET=your_random_secret_here
+MONGO_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/collabo
+JWT_SECRET=your_super_secret_jwt_key
 CLIENT_URL=http://localhost:5173
+
+# Cloudinary Setup for Media
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-### 3. Frontend setup
+### 3. Run the App
+
+Start both servers in development mode:
 ```bash
-cd client
-npm install
-cp .env.example .env
-# .env already set for local dev
-npm run dev
+# Terminal 1 (Backend)
+cd server && npm run dev
+
+# Terminal 2 (Frontend)
+cd client && npm run dev
 ```
+Your frontend will be available at `http://localhost:5173`.
 
-Frontend runs at `http://localhost:5173`
+## 🌐 API Endpoints
 
-## 🌐 Deployment
+### Authentication
+- `POST /api/auth/register` - Create an account
+- `POST /api/auth/login` - Authenticate & receive JWT
+- `GET /api/auth/me` - Validate JWT session
 
-### MongoDB Atlas
-1. Create free cluster at [mongodb.com/atlas](https://mongodb.com/atlas)
-2. Add database user and whitelist `0.0.0.0/0`
-3. Copy the connection string to server `.env`
+### Rooms & Sessions
+- `GET /api/rooms` - Fetch all public/accessible rooms
+- `POST /api/rooms` - Create a new room
+- `POST /api/rooms/join/code` - Join a private room via 6-digit code
+- `POST /api/sessions/log` - Auto-log completed or partial focus sessions
+- `GET /api/music` - Fetch dynamic Cloudinary music playlist
 
-### Backend → Render
-1. Push code to GitHub
-2. New Web Service on [render.com](https://render.com)
-3. Root directory: `server`
-4. Build: `npm install` | Start: `node index.js`
-5. Add environment variables in Render dashboard
-
-### Frontend → Vercel
-1. New project on [vercel.com](https://vercel.com)
-2. Root directory: `client`
-3. Add env vars: `VITE_API_URL` and `VITE_SOCKET_URL` pointing to Render URL
-4. Deploy
-
-## 📡 API Endpoints
-
-```
-POST   /api/auth/register        Register new user
-POST   /api/auth/login           Login
-GET    /api/auth/me              Get current user
-
-GET    /api/rooms                List all accessible rooms
-POST   /api/rooms                Create room
-GET    /api/rooms/:id            Get room with messages
-PUT    /api/rooms/:id            Update room (owner)
-DELETE /api/rooms/:id            Delete room (owner)
-POST   /api/rooms/:id/join       Join room
-POST   /api/rooms/:id/leave      Leave room
-POST   /api/rooms/:id/invite     Invite user by username
-
-POST   /api/sessions/start       Start a study session
-POST   /api/sessions/stop        Stop session & save duration
-GET    /api/sessions/my          Current user's session history
-GET    /api/sessions/room/:id    Room's session history
-
-GET    /api/users/search         Search users by username
-GET    /api/users/leaderboard    Top 10 by study time
-```
-
-## 🔌 Socket Events
-
-| Event | Direction | Description |
-|---|---|---|
-| `join_room` | Client → Server | Join a room channel |
-| `leave_room` | Client → Server | Leave a room channel |
-| `send_message` | Client → Server | Send chat message |
-| `receive_message` | Server → Client | Broadcast new message |
-| `session_started` | Client → Server | Notify session start |
-| `session_stopped` | Client → Server | Notify session stop |
-| `session_update` | Server → Client | Session state changed |
-| `presence_update` | Server → Client | Online users list |
-| `user_joined` | Server → Client | Someone joined |
-| `user_left` | Server → Client | Someone left |
+---
+<div align="center">
+  <i>Built with ❤️ for focused studying.</i>
+</div>
