@@ -82,9 +82,11 @@ Study in the zone without leaving the app. The integrated music player streams L
 Study on the go! The entire platform is fully optimized for mobile devices.
 - Custom slide-out menus designed for phone screens.
 - Mobile-optimized deep focus tracking.
-![alt text](Resource/Screenshots/image-10.png)
-![alt text](Resource/Screenshots/image-11.png)
-![alt text](Resource/Screenshots/image-12.png)
+<p align="center">
+  <img src="Resource/Screenshots/image-10.png" width="32%" />
+  <img src="Resource/Screenshots/image-11.png" width="32%" />
+  <img src="Resource/Screenshots/image-12.png" width="32%" />
+</p>
 
 ### 🎨 Customizable Themes & Backgrounds
 Personalize your study environment to fit your mood.
