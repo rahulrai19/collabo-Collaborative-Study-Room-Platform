@@ -228,5 +228,5 @@ Your frontend will be available at `http://localhost:5173`.
 
 ---
 <div align="center">
-  <i>Built with ❤️ for focused studying.</i>
+  <i>Built with ❤️ for focused studying By Rahul Rai.</i>
 </div>
