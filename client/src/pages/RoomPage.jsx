@@ -637,7 +637,7 @@ export default function RoomPage() {
         <div className="absolute left-4 top-24 md:top-auto md:left-6 md:bottom-6 pointer-events-auto flex flex-col md:flex-row items-start md:items-end gap-4">
           
           {/* Small Toggles */}
-          <div className="relative">
+          <div className="relative z-50">
             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg">
               <button onClick={cycleBackground} className="p-2.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors" title="Change Background">
                 <ImageIcon size={18} />

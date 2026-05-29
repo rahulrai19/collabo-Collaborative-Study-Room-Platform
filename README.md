@@ -8,6 +8,9 @@
     <br />
     Focus deeper, study smarter, and connect with peers around the world.
   </p>
+  <p align="center">
+    <a href="https://collabo-room.vercel.app"><b>🔴 View Live Demo</b></a>
+  </p>
 </div>
 
 <details open="open">
@@ -25,36 +28,18 @@
 
 Collabo is a highly interactive, beautifully designed virtual study platform built to keep you productive. Whether you need a private room to cram with friends, or a 24/7 public study hall to stay accountable, Collabo provides the ultimate environment to track your time, listen to ambient focus music, and eliminate distractions.
 
-<!-- Add Screenshot Here (Dashboard Overview) -->
-> *[Screenshot Placeholder: Dashboard showing overall study stats and activity calendar]*
+
+![alt text](Resource/Screenshots/ss.png)
 
 ## ✨ Key Features
-
-### 🎧 Built-in Ambient Music Player
-Study in the zone without leaving the app. The integrated music player streams Lofi and Ambient tracks directly from a cloud CDN (Cloudinary) to ensure zero lag.
-<!-- Add Screenshot Here (Music Player Panel in Room) -->
-> *[Screenshot Placeholder: Slide-up music player showing volume controls and current track]*
-
-### 🎯 Deep Focus Mode & Distraction Tracking
-Eliminate procrastination with the **Deep Focus Mode**. When enabled, the app enters fullscreen and tracks your tab-switches and window minimizes.
-- Auto-punishes distractions with a 3-strike system.
-- Alerts you when you leave the study tab.
-<!-- Add Screenshot Here (Deep Focus Distraction Warning) -->
-> *[Screenshot Placeholder: Fullscreen Deep Focus mode and distraction alert popup]*
 
 ### 👥 Real-Time Collaboration
 See exactly who is studying with you, right now. 
 - **Live Members Panel:** Slide-out panel to view who is currently focusing or taking a break.
 - **Global Chat:** Real-time socket-based messaging within your room.
 <!-- Add Screenshot Here (Live Panel & Chat) -->
-> *[Screenshot Placeholder: Slide-out Live panel showing active members and their current timer status]*
+![alt text](Resource/Screenshots/image-1.png)
 
-### 📁 File Sharing & Shared Notes
-Upload and pin study materials directly to the room for everyone to access.
-- Upload PDF, Images, or Documents.
-- Everyone in the room can instantly download shared resources.
-<!-- Add Screenshot Here (File Sharing Panel) -->
-> *[Screenshot Placeholder: Shared Files panel showing uploaded documents]*
 
 ### 🔒 Private & Public Study Rooms
 Create dedicated environments for any type of study session:
@@ -62,30 +47,52 @@ Create dedicated environments for any type of study session:
 - **Private Rooms:** Lock rooms with a passcode or invite-only links.
 - **Invite System:** Easily invite friends by their username or share a 6-digit room code.
 <!-- Add Screenshot Here (Room Creation Modal) -->
-> *[Screenshot Placeholder: Create Room modal showing privacy options and study modes]*
+![alt text](Resource/Screenshots/image.png)
+
+
+### 🎯 Deep Focus Mode & Distraction Tracking
+Eliminate procrastination with the **Deep Focus Mode**. When enabled, the app enters fullscreen and tracks your tab-switches and window minimizes.
+- Auto-punishes distractions with a 3-strike system.
+- Alerts you when you leave the study tab.
+<!-- Add Screenshot Here (Deep Focus Distraction Warning) -->
+![alt text](Resource/Screenshots/image-2.png)
+![alt text](Resource/Screenshots/image-4.png)
+![alt text](Resource/Screenshots/image-3.png)
+![alt text](Resource/Screenshots/image-5.png)
 
 ### 📊 Comprehensive Activity Tracking
 Your study time is precious, so we automatically log it for you.
 - **Auto-Save:** Sessions are securely auto-saved to the database even if you accidentally close the tab (with a smart 5-minute minimum threshold).
 - **Global Leaderboard:** Compete with other students and rank up by accumulating study hours.
 - **Activity Calendar:** GitHub-style contribution graph showing your daily study habits.
-<!-- Add Screenshot Here (Leaderboard & Stats) -->
-> *[Screenshot Placeholder: Leaderboard page and GitHub-style contribution graph]*
+![alt text](Resource/Screenshots/image-6.png)
+![alt text](Resource/Screenshots/image-7.png)
+### 📁 File Sharing & Shared Notes
+Upload and pin study materials directly to the room for everyone to access.
+- Upload PDF, Images, or Documents.
+- Everyone in the room can instantly download shared resources.
+![alt text](Resource/Screenshots/image-8.png)
+
+### 🎧 Built-in Ambient Music Player
+Study in the zone without leaving the app. The integrated music player streams Lofi and Ambient tracks directly from a cloud CDN (Cloudinary) to ensure zero lag.
+<!-- Add Screenshot Here (Music Player Panel in Room) -->
+![alt text](Resource/Screenshots/image-9.png)
 
 ### 📱 Responsive Mobile Layout
 Study on the go! The entire platform is fully optimized for mobile devices.
 - Custom slide-out menus designed for phone screens.
 - Mobile-optimized deep focus tracking.
-<!-- Add Screenshot Here (Mobile View) -->
-> *[Screenshot Placeholder: Two phones side-by-side showing the dashboard and a live study room]*
+![alt text](Resource/Screenshots/image-10.png)
+![alt text](Resource/Screenshots/image-11.png)
+![alt text](Resource/Screenshots/image-12.png)
 
 ### 🎨 Customizable Themes & Backgrounds
 Personalize your study environment to fit your mood.
 - Switch between multiple beautiful HD backgrounds (Beach, Forest, Gradient, etc.)
 - Fully supported Dark Mode and Light Mode for the entire application.
-<!-- Add Screenshot Here (Theme Showcase) -->
-> *[Screenshot Placeholder: Split screen showing Dark Mode vs Light Mode dashboard]*
-
+![alt text](Resource/Screenshots/image-14.png)
+![alt text](Resource/Screenshots/image-15.png)
+![alt text](Resource/Screenshots/image-13.png)
 ## 🛠 Tech Stack
 
 Collabo is built with modern web technologies to ensure a snappy, real-time experience.
@@ -107,7 +114,8 @@ Collabo is built with modern web technologies to ensure a snappy, real-time expe
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/YOUR_USERNAME/studyroom.git
+git clone https://github.com/rahulrai19/collabo-Collaborative-Study-Room-Platform.git
+
 cd studyroom
 
 # Install Backend
