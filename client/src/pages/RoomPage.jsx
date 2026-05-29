@@ -33,6 +33,21 @@ const formatTime = (seconds) => {
 const formatChatTime = (date) =>
   new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
+/**
+ * RoomPage Component
+ * 
+ * The core collaborative environment where users study together.
+ * Features:
+ * - Real-time global chat and file sharing.
+ * - Deep Focus mode with tab-switch tracking and anti-distraction measures.
+ * - Floating Picture-in-Picture timer via Canvas API and Media Sessions.
+ * - Shared task list synchronized across all connected peers.
+ * - Cloudinary-powered ambient music player.
+ * 
+ * Uses Socket.io extensively for real-time synchronization of presence, tasks, and chat.
+ * 
+ * @component
+ */
 export default function RoomPage() {
   const { id } = useParams();
   const { user } = useAuth();

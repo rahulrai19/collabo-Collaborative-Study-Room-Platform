@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+/**
+ * Sub-schema for chat messages in a room.
+ */
 const messageSchema = new mongoose.Schema({
   user:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   username: String,
@@ -7,6 +10,9 @@ const messageSchema = new mongoose.Schema({
   sentAt:   { type: Date, default: Date.now },
 });
 
+/**
+ * Sub-schema for files shared within a room.
+ */
 const sharedFileSchema = new mongoose.Schema({
   fileName: String,
   fileUrl:  String,
@@ -15,6 +21,9 @@ const sharedFileSchema = new mongoose.Schema({
   uploadedAt: { type: Date, default: Date.now },
 });
 
+/**
+ * Sub-schema for shared to-do tasks in a room.
+ */
 const taskSchema = new mongoose.Schema({
   text: String,
   isCompleted: { type: Boolean, default: false },
@@ -22,6 +31,16 @@ const taskSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+/**
+ * Mongoose schema representing a Study Room.
+ * Holds active members, chat history, shared files, tasks, and manages study sessions.
+ * 
+ * @typedef {Object} Room
+ * @property {String} name - Room name
+ * @property {Boolean} isPrivate - If true, requires invite or code to join
+ * @property {String} inviteCode - Auto-generated 6-character hex code for private rooms
+ * @property {Boolean} isActive - True if a study session is currently running
+ */
 const roomSchema = new mongoose.Schema({
   name:        { type: String, required: true, trim: true },
   description: { type: String, default: '' },

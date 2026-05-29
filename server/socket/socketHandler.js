@@ -15,6 +15,13 @@ const getPresenceArray = (roomId) => {
   }));
 };
 
+/**
+ * Main Socket.io handler for the Collabo platform.
+ * Manages real-time presence, global chat, study session synchronization, and shared tasks.
+ * Includes JWT-based socket authentication.
+ * 
+ * @param {import('socket.io').Server} io - The initialized Socket.io server instance
+ */
 const socketHandler = (io) => {
   // Authenticate socket connections
   io.use((socket, next) => {

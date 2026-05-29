@@ -5,6 +5,8 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const socketHandler = require('./socket/socketHandler');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 const server = http.createServer(app);
@@ -31,6 +33,35 @@ app.use(cors({
   credentials: true 
 }));
 app.use(express.json());
+
+// Swagger Documentation Setup
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Collabo API',
+      version: '1.0.0',
+      description: 'API documentation for Collabo Study Room Platform',
+    },
+    servers: [{ url: 'http://localhost:5000' }],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        }
+      }
+    },
+    security: [{ bearerAuth: [] }]
+  },
+  apis: ['./routes/*.js'],
+};
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));

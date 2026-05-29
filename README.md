@@ -10,6 +10,8 @@
   </p>
   <p align="center">
     <a href="https://collabo-room.vercel.app"><b>🔴 View Live Demo</b></a>
+    <br />
+   
   </p>
 </div>
 
@@ -29,7 +31,7 @@
 Collabo is a highly interactive, beautifully designed virtual study platform built to keep you productive. Whether you need a private room to cram with friends, or a 24/7 public study hall to stay accountable, Collabo provides the ultimate environment to track your time, listen to ambient focus music, and eliminate distractions.
 
 
-![alt text](Resource/Screenshots/ss.png)
+<p align="center"><img src="Resource/Screenshots/ss.png" width="80%" /></p>
 
 ## ✨ Key Features
 
@@ -38,7 +40,7 @@ See exactly who is studying with you, right now.
 - **Live Members Panel:** Slide-out panel to view who is currently focusing or taking a break.
 - **Global Chat:** Real-time socket-based messaging within your room.
 
-![alt text](Resource/Screenshots/image-1.png)
+<p align="center"><img src="Resource/Screenshots/image-1.png" width="80%" /></p>
 
 
 ### 🔒 Private & Public Study Rooms
@@ -47,7 +49,7 @@ Create dedicated environments for any type of study session:
 - **Private Rooms:** Lock rooms with a passcode or invite-only links.
 - **Invite System:** Easily invite friends by their username or share a 6-digit room code.
 
-![alt text](Resource/Screenshots/image.png)
+<p align="center"><img src="Resource/Screenshots/image.png" width="80%" /></p>
 
 
 ### 🎯 Deep Focus Mode & Distraction Tracking
@@ -55,41 +57,50 @@ Eliminate procrastination with the **Deep Focus Mode**. When enabled, the app en
 - Auto-punishes distractions with a 3-strike system.
 - Alerts you when you leave the study tab.
 
-![alt text](Resource/Screenshots/image-2.png)
-![alt text](Resource/Screenshots/image-4.png)
-![alt text](Resource/Screenshots/image-3.png)
-![alt text](Resource/Screenshots/image-5.png)
+<p align="center">
+  <img src="Resource/Screenshots/image-2.png" width="48%" />
+  <img src="Resource/Screenshots/image-4.png" width="48%" />
+  <br />
+  <img src="Resource/Screenshots/image-3.png" width="48%" />
+  <img src="Resource/Screenshots/image-5.png" width="48%" />
+</p>
 
 ### 📊 Comprehensive Activity Tracking
 Your study time is precious, so we automatically log it for you.
 - **Auto-Save:** Sessions are securely auto-saved to the database even if you accidentally close the tab (with a smart 5-minute minimum threshold).
 - **Global Leaderboard:** Compete with other students and rank up by accumulating study hours.
 - **Activity Calendar:** GitHub-style contribution graph showing your daily study habits.
-![alt text](Resource/Screenshots/image-6.png)
-![alt text](Resource/Screenshots/image-7.png)
+
+<p align="center">
+  <img src="Resource/Screenshots/image-6.png" width="48%" />
+  <img src="Resource/Screenshots/image-7.png" width="48%" />
+</p>
+
 ### 📁 File Sharing & Shared Notes
 Upload and pin study materials directly to the room for everyone to access.
 - Upload PDF, Images, or Documents.
 - Everyone in the room can instantly download shared resources.
-![alt text](Resource/Screenshots/image-8.png)
+
+<p align="center"><img src="Resource/Screenshots/image-8.png" width="80%" /></p>
 
 ### 🎧 Built-in Ambient Music Player
 Study in the zone without leaving the app. The integrated music player streams Lofi and Ambient tracks directly from a cloud CDN (Cloudinary) to ensure zero lag.
 
-![alt text](Resource/Screenshots/image-9.png)
+<p align="center"><img src="Resource/Screenshots/image-9.png" width="80%" /></p>
 
 ### 📌 Picture-in-Picture Floating Timer
 Never lose track of your study sessions when you switch tabs or applications.
 - Pop out the study timer into a floating window that stays on top of all your applications.
 - Features dynamic color rings indicating your current study mode and native Play/Pause controls.
 
-![alt text](image.png)
+<p align="center"><img src="image.png" width="80%" /></p>
 
 ### ✅ Shared Room Tasks
 Collaborate on a real-time synchronized to-do list with everyone in the room.
 - Add study goals and check them off as you complete them.
 - Instantly syncs across all participants' screens.
-![alt text](image-1.png)
+
+<p align="center"><img src="image-1.png" width="80%" /></p>
 
 ### 📱 Responsive Mobile Layout
 Study on the go! The entire platform is fully optimized for mobile devices.
@@ -105,9 +116,12 @@ Study on the go! The entire platform is fully optimized for mobile devices.
 Personalize your study environment to fit your mood.
 - Switch between multiple beautiful HD backgrounds (Beach, Forest, Gradient, etc.)
 - Fully supported Dark Mode and Light Mode for the entire application.
-![alt text](Resource/Screenshots/image-14.png)
-![alt text](Resource/Screenshots/image-15.png)
-![alt text](Resource/Screenshots/image-13.png)
+
+<p align="center">
+  <img src="Resource/Screenshots/image-14.png" width="32%" />
+  <img src="Resource/Screenshots/image-15.png" width="32%" />
+  <img src="Resource/Screenshots/image-13.png" width="32%" />
+</p>
 ## 🛠 Tech Stack
 
 Collabo is built with modern web technologies to ensure a snappy, real-time experience.
@@ -168,6 +182,9 @@ cd client && npm run dev
 Your frontend will be available at `http://localhost:5173`.
 
 ## 🌐 API Endpoints
+<p align="center">
+ <b>📖 Local API Swagger Docs:</b> <a href="http://localhost:5000/api-docs">http://localhost:5000/api-docs</a> (Dev Only)
+ </p>
 
 ### Authentication (`/api/auth`)
 - `POST /register` - Create an account

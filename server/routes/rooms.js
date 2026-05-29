@@ -13,6 +13,18 @@ cloudinary.config({
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+/**
+ * @swagger
+ * /api/rooms:
+ *   get:
+ *     summary: Get all public and user-accessible rooms
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of rooms
+ */
 // GET /api/rooms - list all public rooms + rooms user is member of
 router.get('/', auth, async (req, res) => {
   try {
@@ -33,6 +45,28 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}:
+ *   get:
+ *     summary: Get a specific room by ID
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Room data
+ *       404:
+ *         description: Room not found
+ *       403:
+ *         description: Access denied
+ */
 // GET /api/rooms/:id - get single room with messages
 router.get('/:id', auth, async (req, res) => {
   try {
@@ -53,6 +87,40 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms:
+ *   post:
+ *     summary: Create a new study room
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               topic:
+ *                 type: string
+ *               mode:
+ *                 type: string
+ *               isPrivate:
+ *                 type: boolean
+ *               userLimit:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Room created
+ *       400:
+ *         description: Missing room name
+ */
 // POST /api/rooms - create room
 router.post('/', auth, async (req, res) => {
   try {
@@ -77,6 +145,41 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}:
+ *   put:
+ *     summary: Update room details (owner only)
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               topic:
+ *                 type: string
+ *               isPrivate:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Room updated
+ *       403:
+ *         description: Not authorized
+ */
 // PUT /api/rooms/:id - update room (owner only)
 router.put('/:id', auth, async (req, res) => {
   try {
@@ -100,6 +203,26 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}:
+ *   delete:
+ *     summary: Delete a room (owner only)
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Room deleted
+ *       403:
+ *         description: Not authorized
+ */
 // DELETE /api/rooms/:id - delete room (owner only)
 router.delete('/:id', auth, async (req, res) => {
   try {
@@ -114,6 +237,26 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}/join:
+ *   post:
+ *     summary: Join a room
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Joined room
+ *       403:
+ *         description: Cannot join (private or full)
+ */
 // POST /api/rooms/:id/join
 router.post('/:id/join', auth, async (req, res) => {
   try {
@@ -140,6 +283,26 @@ router.post('/:id/join', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}/leave:
+ *   post:
+ *     summary: Leave a room
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Left room
+ *       400:
+ *         description: Owner cannot leave
+ */
 // POST /api/rooms/:id/leave
 router.post('/:id/leave', auth, async (req, res) => {
   try {
@@ -156,6 +319,30 @@ router.post('/:id/leave', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/join/code:
+ *   post:
+ *     summary: Join a room via 6-digit invite code
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [inviteCode]
+ *             properties:
+ *               inviteCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successfully joined room
+ *       404:
+ *         description: Invalid invite code
+ */
 // POST /api/rooms/join/code - join using an invite code
 router.post('/join/code', auth, async (req, res) => {
   try {
@@ -179,6 +366,38 @@ router.post('/join/code', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}/invite:
+ *   post:
+ *     summary: Invite a user by username
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username]
+ *             properties:
+ *               username:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User invited
+ *       403:
+ *         description: Only owner can invite
+ *       404:
+ *         description: Room or user not found
+ */
 // POST /api/rooms/:id/invite - invite user by username
 router.post('/:id/invite', auth, async (req, res) => {
   try {
@@ -201,6 +420,36 @@ router.post('/:id/invite', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}/files:
+ *   post:
+ *     summary: Upload a shared file to the room
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: File uploaded
+ *       403:
+ *         description: Access denied
+ */
 // POST /api/rooms/:id/files - Upload file to Cloudinary and save to room
 router.post('/:id/files', auth, upload.single('file'), async (req, res) => {
   try {
@@ -239,6 +488,31 @@ router.post('/:id/files', auth, upload.single('file'), async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/rooms/{id}/files/{fileId}/pin:
+ *   put:
+ *     summary: Toggle pin status of a shared file (Owner only)
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: fileId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: File pin toggled
+ *       403:
+ *         description: Only owner can pin
+ */
 // PUT /api/rooms/:id/files/:fileId/pin - Toggle pin status
 router.put('/:id/files/:fileId/pin', auth, async (req, res) => {
   try {

@@ -17,6 +17,21 @@ const formatTime = (seconds) => {
 const formatDate = (date) =>
   new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
+/**
+ * DashboardPage Component
+ * 
+ * Serves as the landing page after a user successfully logs in.
+ * Displays:
+ * - A personalized greeting with live clock and dynamic gradient.
+ * - Study statistics and activity visualization (Activity Calendar).
+ * - Recent study sessions history.
+ * - Milestones unlocked based on total study time.
+ * - Options to join or create study rooms categorized by study mode.
+ * 
+ * Fetches data asynchronously from the /sessions, /rooms, and /auth APIs.
+ * 
+ * @component
+ */
 export default function DashboardPage() {
   const { user, updateUser } = useAuth();
   const [sessions, setSessions] = useState([]);

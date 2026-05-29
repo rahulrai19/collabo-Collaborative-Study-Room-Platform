@@ -4,6 +4,30 @@ const Room = require('../models/Room');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
+/**
+ * @swagger
+ * /api/sessions/start:
+ *   post:
+ *     summary: Start a study session (Room Owner)
+ *     tags: [Sessions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [roomId]
+ *             properties:
+ *               roomId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Session started
+ *       403:
+ *         description: Not authorized
+ */
 // POST /api/sessions/start
 router.post('/start', auth, async (req, res) => {
   try {
@@ -36,6 +60,30 @@ router.post('/start', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/sessions/stop:
+ *   post:
+ *     summary: Stop an active study session (Room Owner)
+ *     tags: [Sessions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [roomId]
+ *             properties:
+ *               roomId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Session stopped
+ *       400:
+ *         description: No active session
+ */
 // POST /api/sessions/stop
 router.post('/stop', auth, async (req, res) => {
   try {
@@ -75,6 +123,24 @@ router.post('/stop', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/sessions/room/{roomId}:
+ *   get:
+ *     summary: Get session history for a specific room
+ *     tags: [Sessions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Array of sessions
+ */
 // GET /api/sessions/room/:roomId - session history for a room
 router.get('/room/:roomId', auth, async (req, res) => {
   try {
@@ -87,6 +153,18 @@ router.get('/room/:roomId', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/sessions/my:
+ *   get:
+ *     summary: Get current user's session history
+ *     tags: [Sessions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of user sessions
+ */
 // GET /api/sessions/my - current user's session history
 router.get('/my', auth, async (req, res) => {
   try {
@@ -99,6 +177,30 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/sessions/log:
+ *   post:
+ *     summary: Log an individual completed focus session
+ *     tags: [Sessions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [roomId, duration]
+ *             properties:
+ *               roomId:
+ *                 type: string
+ *               duration:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Session logged successfully
+ */
 // POST /api/sessions/log - log individual focus session
 router.post('/log', auth, async (req, res) => {
   try {
