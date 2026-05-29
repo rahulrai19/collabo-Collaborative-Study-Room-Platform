@@ -116,6 +116,65 @@ const socketHandler = (io) => {
       io.to(roomId).emit('file_pin_update', { fileId, isPinned });
     });
 
+    // Tasks Features
+    socket.on('add_task', async ({ roomId, text }) => {
+      if (!text || !text.trim()) return;
+      const task = {
+        text: text.trim(),
+        username: socket.user.username,
+        isCompleted: false,
+        createdAt: new Date(),
+      };
+      try {
+        const room = await Room.findByIdAndUpdate(
+          roomId,
+          { $push: { tasks: task } },
+          { new: true }
+        );
+        const addedTask = room.tasks[room.tasks.length - 1];
+        io.to(roomId).emit('receive_task', addedTask);
+      } catch (err) {
+        console.error('Failed to add task:', err.message);
+      }
+    });
+
+    socket.on('toggle_task', async ({ roomId, taskId }) => {
+      try {
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        const task = room.tasks.id(taskId);
+        if (!task) return;
+        
+        task.isCompleted = !task.isCompleted;
+        await room.save();
+        
+        io.to(roomId).emit('task_updated', { taskId, isCompleted: task.isCompleted });
+      } catch (err) {
+        console.error('Failed to toggle task:', err.message);
+      }
+    });
+
+    socket.on('delete_task', async ({ roomId, taskId }) => {
+      try {
+        const room = await Room.findById(roomId);
+        if (!room) return;
+        const task = room.tasks.id(taskId);
+        if (!task) return;
+        
+        // Only creator or room owner can delete
+        const isCreator = task.username === socket.user.username;
+        const isOwner = room.owner.toString() === socket.user.id;
+        
+        if (isCreator || isOwner) {
+          room.tasks.pull(taskId);
+          await room.save();
+          io.to(roomId).emit('task_deleted', taskId);
+        }
+      } catch (err) {
+        console.error('Failed to delete task:', err.message);
+      }
+    });
+
     // Social Features
     socket.on('private_message', async ({ recipientId, text }) => {
       if (!text || !text.trim()) return;

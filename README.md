@@ -37,7 +37,7 @@ Collabo is a highly interactive, beautifully designed virtual study platform bui
 See exactly who is studying with you, right now. 
 - **Live Members Panel:** Slide-out panel to view who is currently focusing or taking a break.
 - **Global Chat:** Real-time socket-based messaging within your room.
-<!-- Add Screenshot Here (Live Panel & Chat) -->
+
 ![alt text](Resource/Screenshots/image-1.png)
 
 
@@ -46,7 +46,7 @@ Create dedicated environments for any type of study session:
 - **Public Study Halls:** Meet new people and study together.
 - **Private Rooms:** Lock rooms with a passcode or invite-only links.
 - **Invite System:** Easily invite friends by their username or share a 6-digit room code.
-<!-- Add Screenshot Here (Room Creation Modal) -->
+
 ![alt text](Resource/Screenshots/image.png)
 
 
@@ -54,7 +54,7 @@ Create dedicated environments for any type of study session:
 Eliminate procrastination with the **Deep Focus Mode**. When enabled, the app enters fullscreen and tracks your tab-switches and window minimizes.
 - Auto-punishes distractions with a 3-strike system.
 - Alerts you when you leave the study tab.
-<!-- Add Screenshot Here (Deep Focus Distraction Warning) -->
+
 ![alt text](Resource/Screenshots/image-2.png)
 ![alt text](Resource/Screenshots/image-4.png)
 ![alt text](Resource/Screenshots/image-3.png)
@@ -75,8 +75,21 @@ Upload and pin study materials directly to the room for everyone to access.
 
 ### 🎧 Built-in Ambient Music Player
 Study in the zone without leaving the app. The integrated music player streams Lofi and Ambient tracks directly from a cloud CDN (Cloudinary) to ensure zero lag.
-<!-- Add Screenshot Here (Music Player Panel in Room) -->
+
 ![alt text](Resource/Screenshots/image-9.png)
+
+### 📌 Picture-in-Picture Floating Timer
+Never lose track of your study sessions when you switch tabs or applications.
+- Pop out the study timer into a floating window that stays on top of all your applications.
+- Features dynamic color rings indicating your current study mode and native Play/Pause controls.
+
+![alt text](image.png)
+
+### ✅ Shared Room Tasks
+Collaborate on a real-time synchronized to-do list with everyone in the room.
+- Add study goals and check them off as you complete them.
+- Instantly syncs across all participants' screens.
+![alt text](image-1.png)
 
 ### 📱 Responsive Mobile Layout
 Study on the go! The entire platform is fully optimized for mobile devices.
@@ -156,17 +169,62 @@ Your frontend will be available at `http://localhost:5173`.
 
 ## 🌐 API Endpoints
 
-### Authentication
-- `POST /api/auth/register` - Create an account
-- `POST /api/auth/login` - Authenticate & receive JWT
-- `GET /api/auth/me` - Validate JWT session
+### Authentication (`/api/auth`)
+- `POST /register` - Create an account
+- `POST /login` - Authenticate & receive JWT
+- `GET /me` - Validate JWT session
+- `POST /avatar` - Upload user profile picture
 
-### Rooms & Sessions
-- `GET /api/rooms` - Fetch all public/accessible rooms
-- `POST /api/rooms` - Create a new room
-- `POST /api/rooms/join/code` - Join a private room via 6-digit code
-- `POST /api/sessions/log` - Auto-log completed or partial focus sessions
-- `GET /api/music` - Fetch dynamic Cloudinary music playlist
+### Users (`/api/users`)
+- `GET /search` - Search users by username
+- `GET /leaderboard` - Fetch global leaderboard
+
+### Social & Friends (`/api/social`)
+- `GET /search` - Search for friends
+- `GET /friends` - Fetch friends list
+- `POST /request/:id` - Send friend request
+- `POST /accept/:id` - Accept friend request
+- `POST /reject/:id` - Reject friend request
+- `POST /remove/:id` - Remove friend
+
+### Rooms (`/api/rooms`)
+- `GET /` - Fetch all public/accessible rooms
+- `GET /:id` - Fetch room details
+- `POST /` - Create a new room
+- `PUT /:id` - Update room details
+- `DELETE /:id` - Delete a room
+- `POST /:id/join` - Join a public room
+- `POST /:id/leave` - Leave a room
+- `POST /join/code` - Join a private room via 6-digit code
+- `POST /:id/invite` - Send invite to a user
+- `POST /:id/files` - Upload shared file
+- `PUT /:id/files/:fileId/pin` - Toggle pin on a shared file
+
+### Chat (`/api/chat`)
+- `GET /history/:friendId` - Get private chat history
+
+### Feed (`/api/feed`)
+- `GET /` - Get social feed
+- `POST /` - Create a new feed post
+- `POST /:id/like` - Like/Unlike a post
+- `DELETE /:id` - Delete a post
+
+### Notes (`/api/notes`)
+- `GET /` - Fetch user notes
+- `POST /` - Create/Upload a new note
+- `POST /:id/download` - Track note download
+- `GET /:id/file` - Get note file
+- `DELETE /:id` - Delete a note
+
+### Sessions (`/api/sessions`)
+- `POST /start` - Start tracking a study session
+- `POST /stop` - Stop tracking a session
+- `GET /room/:roomId` - Get session stats for a room
+- `GET /my` - Get logged user's sessions
+- `POST /log` - Auto-log completed or partial focus sessions
+
+### Music (`/api/music`)
+- `GET /` - Fetch dynamic Cloudinary music playlist
 
 ---
 <div align="center">

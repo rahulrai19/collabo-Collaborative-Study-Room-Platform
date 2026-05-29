@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy, FileText, Upload, Pin, Download, Timer, AlertTriangle, SkipForward, SkipBack, Volume2, Activity } from 'lucide-react';
+import { Send, Play, Pause, Square, UserPlus, Users, ArrowLeft, Lock, Globe, Trash2, Home, Image as ImageIcon, Music, RotateCcw, MessageSquare, Target, Coffee, Moon, X, Maximize, Copy, FileText, Upload, Pin, Download, Timer, AlertTriangle, SkipForward, SkipBack, Volume2, Activity, PictureInPicture, CheckSquare, ListTodo, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -41,6 +41,8 @@ export default function RoomPage() {
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [files, setFiles] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [newTaskText, setNewTaskText] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,13 @@ export default function RoomPage() {
   const [volume, setVolume] = useState(0.5);
   const audioRef = useRef(null);
 
+  // PiP State
+  const pipCanvasRef = useRef(null);
+  const pipVideoRef = useRef(null);
+  const [isPipActive, setIsPipActive] = useState(false);
+  const animationFrameId = useRef(null);
+  const timerStateRef = useRef({ timeLeft, timerMode });
+
   const chatRef = useRef(null);
   const timerRef = useRef(null);
   const returnTimerRef = useRef(null);
@@ -83,6 +92,7 @@ export default function RoomPage() {
   
   useEffect(() => {
     sessionDataRef.current = { mode: timerMode, timeLeft: timeLeft, roomId: id };
+    timerStateRef.current = { timeLeft, timerMode };
   }, [timerMode, timeLeft, id]);
 
   useEffect(() => {
@@ -143,6 +153,7 @@ export default function RoomPage() {
         setRoom(res.data);
         setMessages(res.data.messages || []);
         setFiles(res.data.sharedFiles || []);
+        setTasks(res.data.tasks || []);
       })
       .catch(err => {
         toast.error('Failed to load room');
@@ -203,6 +214,148 @@ export default function RoomPage() {
     setIsPlayingMusic(true);
   };
 
+  // PiP Logic
+  const drawPiPTimer = useCallback(() => {
+    const canvas = pipCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const { timeLeft, timerMode } = timerStateRef.current;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw background
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 100;
+    
+    // Calculate progress
+    let progress = 0;
+    if (timerMode === 'focus' || timerMode === 'shortBreak' || timerMode === 'longBreak') {
+       const totalSeconds = TIMER_MODES[timerMode].minutes * 60;
+       progress = 1 - (timeLeft / totalSeconds);
+    } else {
+       progress = (timeLeft % 60) / 60; 
+    }
+
+    // Draw background circle
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 14;
+    ctx.stroke();
+
+    // Draw progress circle
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, -0.5 * Math.PI, (-0.5 + 2 * progress) * Math.PI);
+    ctx.strokeStyle = timerMode === 'focus' ? '#3b82f6' : (timerMode === 'stopwatch' ? '#eab308' : '#22c55e');
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Draw text
+    const { m, s } = formatTime(timeLeft);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 48px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${m}:${s}`, centerX, centerY);
+    
+    // Draw mode text
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillStyle = '#9ca3af';
+    ctx.fillText(TIMER_MODES[timerMode].label.toUpperCase(), centerX, centerY + 40);
+
+    animationFrameId.current = requestAnimationFrame(drawPiPTimer);
+  }, []);
+
+  const togglePiP = async () => {
+    try {
+      if (isPipActive && document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setIsPipActive(false);
+      } else {
+        const video = pipVideoRef.current;
+        const canvas = pipCanvasRef.current;
+        if (!video || !canvas) return;
+        
+        // Ensure at least one frame is drawn before capturing stream
+        if (!animationFrameId.current) {
+           drawPiPTimer(); 
+        }
+        
+        const stream = canvas.captureStream(30);
+        video.srcObject = stream;
+        
+        // Wait for video metadata to load so play() isn't interrupted
+        await new Promise(resolve => {
+          if (video.readyState >= 1) resolve();
+          else {
+            video.addEventListener('loadedmetadata', resolve, { once: true });
+            setTimeout(resolve, 500); // Fallback timeout
+          }
+        });
+
+        await video.play();
+        await video.requestPictureInPicture();
+        setIsPipActive(true);
+      }
+    } catch (err) {
+      console.error('PiP failed', err);
+      toast.error('Picture-in-Picture not supported or failed.');
+    }
+  };
+
+  useEffect(() => {
+    const video = pipVideoRef.current;
+    if (video) {
+       const handleLeavePiP = () => {
+          setIsPipActive(false);
+          if (animationFrameId.current) {
+            cancelAnimationFrame(animationFrameId.current);
+            animationFrameId.current = null;
+          }
+       };
+       video.addEventListener('leavepictureinpicture', handleLeavePiP);
+       return () => video.removeEventListener('leavepictureinpicture', handleLeavePiP);
+    }
+  }, []);
+
+  // Sync Media Session API so PiP window shows Play/Pause buttons for the live stream
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = timerActive ? 'playing' : 'paused';
+    }
+  }, [timerActive]);
+
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => setTimerActive(true));
+      navigator.mediaSession.setActionHandler('pause', () => setTimerActive(false));
+    }
+    return () => {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+      }
+    };
+  }, []);
+
+  // Sync PiP video play state with React timer state so the stream resumes
+  useEffect(() => {
+    const video = pipVideoRef.current;
+    if (video && isPipActive) {
+      if (timerActive) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    }
+  }, [timerActive, isPipActive]);
+
   // Join socket room
   useEffect(() => {
     if (!socket) return;
@@ -228,6 +381,17 @@ export default function RoomPage() {
     socket.on('file_pin_update', ({ fileId, isPinned }) => {
       setFiles(prev => prev.map(f => f._id === fileId ? { ...f, isPinned } : f));
     });
+    
+    // Tasks listeners
+    socket.on('receive_task', (task) => {
+      setTasks(prev => [...prev, task]);
+    });
+    socket.on('task_updated', ({ taskId, isCompleted }) => {
+      setTasks(prev => prev.map(t => t._id === taskId ? { ...t, isCompleted } : t));
+    });
+    socket.on('task_deleted', (taskId) => {
+      setTasks(prev => prev.filter(t => t._id !== taskId));
+    });
 
     return () => {
       socket.emit('leave_room', id);
@@ -237,6 +401,9 @@ export default function RoomPage() {
       socket.off('presence_update');
       socket.off('receive_file');
       socket.off('file_pin_update');
+      socket.off('receive_task');
+      socket.off('task_updated');
+      socket.off('task_deleted');
     };
   }, [id, socket, user.username]);
 
@@ -394,6 +561,23 @@ export default function RoomPage() {
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages, activePanel]);
+
+  const handleAddTask = (e) => {
+    e.preventDefault();
+    if (!newTaskText.trim() || !socket) return;
+    socket.emit('add_task', { roomId: id, text: newTaskText });
+    setNewTaskText('');
+  };
+
+  const toggleTask = (taskId) => {
+    if (!socket) return;
+    socket.emit('toggle_task', { roomId: id, taskId });
+  };
+
+  const deleteTask = (taskId) => {
+    if (!socket) return;
+    socket.emit('delete_task', { roomId: id, taskId });
+  };
 
   const sendMessage = (e) => {
     e.preventDefault();
@@ -554,7 +738,19 @@ export default function RoomPage() {
           </div>
 
           {/* Main Timer Card */}
-          <div className="bg-[#1A1A1A]/80 backdrop-blur-2xl border border-white/10 rounded-[30px] md:rounded-[40px] p-8 md:p-12 w-[90%] md:w-full max-w-2xl text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)]">
+          <div className="relative bg-[#1A1A1A]/80 backdrop-blur-2xl border border-white/10 rounded-[30px] md:rounded-[40px] p-8 md:p-12 w-[90%] md:w-full max-w-2xl text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)]">
+            
+            {/* Pop Out Button (Top Right) */}
+            {!isDeepFocus && (
+              <button 
+                onClick={togglePiP} 
+                className={`absolute top-6 right-6 p-2.5 rounded-2xl transition-all shadow-lg ${isPipActive ? 'text-primary-400 bg-primary-900/40 border border-primary-500/30' : 'text-white/40 hover:text-white hover:bg-white/10 border border-transparent'}`}
+                title="Pop out timer"
+              >
+                <PictureInPicture size={18} />
+              </button>
+            )}
+
             <div className="text-orange-500 font-bold uppercase tracking-[0.3em] mb-2 text-xs md:text-sm drop-shadow-md">
               {TIMER_MODES[timerMode].label}
             </div>
@@ -779,6 +975,15 @@ export default function RoomPage() {
             >
               <FileText size={16} /> Files
             </button>
+            <button 
+              onClick={() => setActivePanel(activePanel === 'tasks' ? null : 'tasks')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                activePanel === 'tasks' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <CheckSquare size={16} /> Tasks
+              {tasks.filter(t => !t.isCompleted).length > 0 && <span className="bg-primary-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">{tasks.filter(t => !t.isCompleted).length}</span>}
+            </button>
             {isOwner && (
               <>
                 <button onClick={() => setShowInvite(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Invite Code">
@@ -959,6 +1164,62 @@ export default function RoomPage() {
                 </div>
               </>
             )}
+            {activePanel === 'tasks' && (
+              <>
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                  <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2"><ListTodo size={16}/> Shared Tasks</h3>
+                  <button onClick={() => setActivePanel(null)} className="text-white/50 hover:text-white"><X size={16}/></button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                  {tasks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
+                      <ListTodo size={32} className="text-white mb-2" />
+                      <p className="text-white text-sm">No tasks added yet.</p>
+                    </div>
+                  ) : (
+                    tasks.map((task) => (
+                      <div key={task._id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${task.isCompleted ? 'bg-primary-600/10 border-primary-500/20' : 'bg-white/5 border-white/10'}`}>
+                        <button 
+                          onClick={() => toggleTask(task._id)}
+                          className={`w-5 h-5 rounded flex items-center justify-center border shrink-0 transition-all ${task.isCompleted ? 'bg-primary-500 border-primary-500 text-white' : 'border-white/30 text-transparent hover:border-white/50'}`}
+                        >
+                          <CheckSquare size={14} />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate transition-all ${task.isCompleted ? 'text-white/40 line-through' : 'text-white/90'}`}>{task.text}</p>
+                          <p className="text-[10px] text-white/40 mt-0.5">Added by {task.username}</p>
+                        </div>
+                        {(task.username === user.username || isOwner) && (
+                          <button onClick={() => deleteTask(task._id)} className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/20 rounded-lg transition-colors shrink-0">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="p-3 border-t border-white/10 bg-black/20">
+                  <form onSubmit={handleAddTask} className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Add a new task..." 
+                      className="flex-1 bg-dark-900 border border-white/10 text-white text-sm rounded-xl px-3 py-2 focus:border-primary-500 focus:outline-none"
+                      value={newTaskText}
+                      onChange={(e) => setNewTaskText(e.target.value)}
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={!newTaskText.trim()}
+                      className="bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </form>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1079,6 +1340,21 @@ export default function RoomPage() {
           </div>
         </div>
       )}
+
+      {/* Hidden elements for PiP Video Stream */}
+      <canvas ref={pipCanvasRef} width="300" height="300" className="hidden" />
+      <video 
+        ref={pipVideoRef} 
+        muted 
+        playsInline 
+        className="hidden" 
+        onPlay={() => {
+           if (isPipActive && document.pictureInPictureElement) setTimerActive(true);
+        }}
+        onPause={() => {
+           if (isPipActive && document.pictureInPictureElement) setTimerActive(false);
+        }}
+      />
 
     </div>
   );

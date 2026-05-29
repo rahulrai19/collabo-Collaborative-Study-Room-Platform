@@ -15,6 +15,13 @@ const sharedFileSchema = new mongoose.Schema({
   uploadedAt: { type: Date, default: Date.now },
 });
 
+const taskSchema = new mongoose.Schema({
+  text: String,
+  isCompleted: { type: Boolean, default: false },
+  username: String,
+  createdAt: { type: Date, default: Date.now },
+});
+
 const roomSchema = new mongoose.Schema({
   name:        { type: String, required: true, trim: true },
   description: { type: String, default: '' },
@@ -28,6 +35,7 @@ const roomSchema = new mongoose.Schema({
   isPrivate:   { type: Boolean, default: false },
   messages:    [messageSchema],
   sharedFiles: [sharedFileSchema],
+  tasks:       [taskSchema],
   isActive:    { type: Boolean, default: false }, // session running?
   sessionStart:{ type: Date, default: null },
 }, { timestamps: true });
