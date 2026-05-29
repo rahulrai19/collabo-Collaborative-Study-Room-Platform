@@ -86,7 +86,7 @@ Upload and pin study materials directly to the room for everyone to access.
 ### 🎧 Built-in Ambient Music Player
 Study in the zone without leaving the app. The integrated music player streams Lofi and Ambient tracks directly from a cloud CDN (Cloudinary) to ensure zero lag.
 
-<p align="center"><img src="Resource/Screenshots/image-9.png" width="80%" /></p>
+<p align="center"><img src="Resource/Screenshots/image-9.png" width="40%" /></p>
 
 ### 📌 Picture-in-Picture Floating Timer
 Never lose track of your study sessions when you switch tabs or applications.
