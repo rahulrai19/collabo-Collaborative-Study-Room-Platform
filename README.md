@@ -81,7 +81,7 @@ Upload and pin study materials directly to the room for everyone to access.
 - Upload PDF, Images, or Documents.
 - Everyone in the room can instantly download shared resources.
 
-<p align="center"><img src="Resource/Screenshots/image-8.png" width="80%" /></p>
+<p align="center"><img src="Resource/Screenshots/image-8.png" width="40%" /></p>
 
 ### 🎧 Built-in Ambient Music Player
 Study in the zone without leaving the app. The integrated music player streams Lofi and Ambient tracks directly from a cloud CDN (Cloudinary) to ensure zero lag.
@@ -93,14 +93,14 @@ Never lose track of your study sessions when you switch tabs or applications.
 - Pop out the study timer into a floating window that stays on top of all your applications.
 - Features dynamic color rings indicating your current study mode and native Play/Pause controls.
 
-<p align="center"><img src="image.png" width="80%" /></p>
+<p align="center"><img src="image.png" width="40%" /></p>
 
 ### ✅ Shared Room Tasks
 Collaborate on a real-time synchronized to-do list with everyone in the room.
 - Add study goals and check them off as you complete them.
 - Instantly syncs across all participants' screens.
 
-<p align="center"><img src="image-1.png" width="80%" /></p>
+<p align="center"><img src="image-1.png" width="40%" /></p>
 
 ### 📱 Responsive Mobile Layout
 Study on the go! The entire platform is fully optimized for mobile devices.
